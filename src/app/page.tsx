@@ -1,202 +1,114 @@
 import Link from "next/link";
+import { Brand } from "@/components/brand";
 
-const featureCards = [
-  ["🌱", "Crop Management", "Track crops, varieties, planting dates and harvest schedules."],
-  ["💰", "Expense Tracking", "Record seeds, fertilizer, labor, equipment and other expenses."],
-  ["💧", "Irrigation", "Keep track of irrigation activities and water usage."],
-  ["📦", "Inventory", "Manage seeds, fertilizer, pesticides, tools and farm supplies."],
-  ["🌾", "Harvest", "Record harvest quantities, sales and revenue."],
-  ["📊", "Farm Analytics", "Understand your farm performance with useful dashboards and charts."],
-] as const;
+const features = [
+  { title: "Manage Crops", description: "Track each crop, planting date, and harvest window from one place.", icon: "🌱" },
+  { title: "Track Expenses", description: "Keep a clear view of farm spending before the season gets busy.", icon: "💰" },
+  { title: "Monitor Farm Activity", description: "See crop status and farm details in a simple, practical dashboard.", icon: "📍" },
+  { title: "Track Harvests", description: "Record what you harvest and follow up on expected output.", icon: "🚜" },
+  { title: "Understand Profitability", description: "Prepare your farm for informed decisions around costs and returns.", icon: "📊" },
+];
 
-export default function Home() {
+const steps = [
+  "Create your account",
+  "Add your farm",
+  "Add your crops",
+  "Track farm activity",
+  "Understand your farm performance",
+];
+
+export default function HomePage() {
   return (
-    <main className="min-h-screen bg-[#f6f8f3] text-[#172015]">
-      <header className="border-b border-[#dfe6d8] bg-white/80 backdrop-blur-sm">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
-          <Link href="/" className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-green-600 text-xl font-bold text-white">
-              DF
-            </div>
-            <div>
-              <h1 className="text-xl font-bold">DigiFarm</h1>
-              <p className="text-xs text-gray-600">Your trusted partner in digital agriculture</p>
-            </div>
-          </Link>
-
-          <nav className="hidden items-center gap-8 md:flex">
-            <a href="#features" className="text-sm text-gray-600 transition hover:text-green-700">
-              Features
-            </a>
-            <a href="#about" className="text-sm text-gray-600 transition hover:text-green-700">
-              About
-            </a>
-            <Link
-              href="/register"
-              className="rounded-lg bg-green-600 px-7 py-2.5 text-sm font-medium text-white transition hover:bg-green-700"
-            >
-              Register
+    <main>
+      <header className="site-header">
+        <div className="header-inner">
+          <Brand />
+          <nav aria-label="Main navigation" className="flex flex-wrap items-center gap-3">
+            <Link href="/login" className="text-link text-sm">
+              Sign in
+            </Link>
+            <Link href="/signup" className="button button-primary button-small">
+              Get started
             </Link>
           </nav>
         </div>
       </header>
 
-      <section className="mx-auto grid max-w-7xl items-center gap-10 px-6 py-12 md:grid-cols-2 md:py-28">
-        <div>
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-green-100 px-4 py-2 text-sm font-medium text-green-800">
-            Built for modern farmers
-          </div>
-
-          <h2 className="max-w-3xl text-5xl font-bold leading-tight tracking-tight md:text-5xl">
-            Manage Your Farms.
-            <span className="mt-2 block text-green-600">Grow smarter</span>
-          </h2>
-          <p className="mt-6 max-w-xl text-lg leading-8 text-gray-600">
-            We help farmers plan, track, and improve every step of production with simple digital tools.
-          </p>
-
-          <div className="mt-8 flex flex-wrap gap-4">
-            <Link
-              href="/register"
-              className="rounded-xl bg-green-600 px-6 py-3.5 font-semibold text-white shadow-sm transition hover:bg-green-700"
-            >
-              Create Farmer Account
-            </Link>
-
-            <a
-              href="#features"
-              className="rounded-xl border border-gray-300 bg-white px-6 py-3.5 font-semibold text-gray-700 transition hover:bg-gray-50"
-            >
-              Explore Features
-            </a>
-          </div>
-
-          <div className="mt-8 flex flex-wrap gap-6 text-sm text-gray-500">
-            <span>Simple to use</span>
-            <span>Secure and reliable</span>
-            <span>Trusted by farmers</span>
-          </div>
-        </div>
-
-        <div className="rounded-3xl border border-[#dfe6d8] bg-white p-5 shadow-xl">
-          <div className="rounded-2xl bg-[#f5f8f2] p-5">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500">Good Morning</p>
-                <h3 className="mt-1 text-2xl font-bold">Farmer&apos;s Dashboard</h3>
-              </div>
-
-              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-green-100 text-sm font-semibold text-green-700">
-                Farmer
-              </div>
-            </div>
-
-            <div className="mt-6 grid grid-cols-2 gap-4">
-              <div className="rounded-2xl bg-white p-5 shadow-sm">
-                <p className="text-sm text-gray-500">Active Crops</p>
-                <p className="mt-2 text-3xl font-bold text-green-700">8</p>
-              </div>
-
-              <div className="rounded-2xl bg-white p-5 shadow-sm">
-                <p className="text-sm text-gray-500">Farm Size</p>
-                <p className="mt-2 text-3xl font-bold">4.5</p>
-                <p className="mt-2 text-sm font-medium text-gray-600">Hectares</p>
-              </div>
-
-              <div className="rounded-2xl bg-white p-5 shadow-sm">
-                <p className="text-sm text-gray-500">Expenses</p>
-                <p className="mt-2 text-2xl font-bold">Rs. 45K</p>
-              </div>
-
-              <div className="rounded-2xl bg-white p-5 shadow-sm">
-                <p className="text-sm text-gray-500">Revenue</p>
-                <p className="mt-2 text-2xl font-bold text-green-700">Rs. 1.2M</p>
-              </div>
-            </div>
-
-            <div className="mt-4 rounded-2xl bg-white p-5 shadow-sm">
-              <div className="flex items-center justify-between">
-                <p className="font-semibold">Crop Overview</p>
-                <span className="text-sm text-green-600">View all</span>
-              </div>
-
-              <div className="mt-4 space-y-4">
-                <div>
-                  <div className="flex justify-between text-sm">
-                    <span>Rice</span>
-                    <span className="text-green-600">Growing</span>
-                  </div>
-                  <div className="mt-2 h-2 rounded-full bg-gray-100">
-                    <div className="h-2 w-3/4 rounded-full bg-green-600" />
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex justify-between text-sm">
-                    <span>Maize</span>
-                    <span className="text-green-600">Growing</span>
-                  </div>
-                  <div className="mt-2 h-2 rounded-full bg-gray-100">
-                    <div className="h-2 w-1/2 rounded-full bg-green-500" />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section id="features" className="bg-white py-20">
-        <div className="mx-auto max-w-7xl px-6">
-          <div className="mx-auto max-w-2xl text-center">
-            <p className="font-semibold text-green-600">Everything in one place</p>
-            <h2 className="mt-3 text-4xl font-bold">Tools to manage your farm</h2>
-            <p className="mt-4 text-lg text-gray-600">
-              Keep your farm information organized and easy to understand.
+      <section className="page-width" style={{ padding: "72px 0 32px" }}>
+        <div className="grid gap-8 md:grid-cols-[1.1fr_0.9fr] md:items-center">
+          <div>
+            <p className="eyebrow">Simple farm management for everyday growing</p>
+            <h1 style={{ fontFamily: "Georgia, serif", fontSize: "clamp(2.7rem, 6vw, 5rem)", lineHeight: 1, color: "var(--farm-green-deep)" }}>
+              Your farm, organized digitally.
+            </h1>
+            <p style={{ marginTop: 20, fontSize: "1.12rem", lineHeight: 1.75, color: "rgba(28, 42, 35, 0.75)", maxWidth: 640 }}>
+              DigiFarm helps farmers manage crop records, farm information, seasonal activity, expenses, and harvest planning from one calm, practical dashboard.
             </p>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 14, marginTop: 28 }}>
+              <Link href="/signup" className="button button-primary">
+                Get Started
+              </Link>
+              <Link href="/login" className="button button-secondary">
+                Sign In
+              </Link>
+            </div>
           </div>
 
-          <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {featureCards.map(([icon, title, description]) => (
-              <div
-                key={title}
-                className="rounded-2xl border border-gray-200 bg-white p-6 transition hover:-translate-y-1 hover:shadow-lg"
-              >
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-green-100 text-2xl">
-                  {icon}
-                </div>
-                <h3 className="mt-5 text-xl font-bold">{title}</h3>
-                <p className="mt-2 leading-7 text-gray-600">{description}</p>
+          <div className="dashboard-card" style={{ background: "rgba(255, 255, 255, 0.72)", padding: 24 }}>
+            <div className="stat-card" style={{ marginBottom: 16 }}>
+              <div className="eyebrow" style={{ marginBottom: 0 }}>This season</div>
+              <strong>14 active records</strong>
+              <span style={{ color: "rgba(28, 42, 35, 0.7)", fontSize: "0.96rem" }}>Crops, fields, and progress tracked in one view.</span>
+            </div>
+            <div className="dashboard-grid" style={{ gridTemplateColumns: "1fr", gap: 12 }}>
+              <div className="task-item">
+                <span>🌾 Rice</span>
+                <span className="tag">Growing</span>
               </div>
+              <div className="task-item">
+                <span>🥬 Mustard</span>
+                <span className="tag">Planned</span>
+              </div>
+              <div className="task-item">
+                <span>🌽 Maize</span>
+                <span className="tag">Ready</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="page-width" style={{ padding: "20px 0 40px" }}>
+        <div className="dashboard-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 20 }}>
+          {features.map((feature) => (
+            <article key={feature.title} className="dashboard-card" style={{ padding: 22 }}>
+              <div style={{ fontSize: "2rem" }}>{feature.icon}</div>
+              <h2 style={{ marginTop: 12, fontSize: "1.45rem", color: "var(--farm-green-deep)" }}>{feature.title}</h2>
+              <p style={{ marginTop: 10, lineHeight: 1.7, color: "rgba(28, 42, 35, 0.7)" }}>{feature.description}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="page-width" style={{ padding: "32px 0 72px" }}>
+        <div className="dashboard-card" style={{ padding: 28 }}>
+          <p className="eyebrow">How it works</p>
+          <h2 style={{ fontSize: "clamp(2rem, 4vw, 3rem)", color: "var(--farm-green-deep)" }}>A simple path to better farm decisions.</h2>
+          <ol style={{ listStyle: "none", padding: 0, margin: "24px 0 0", display: "grid", gap: 16 }}>
+            {steps.map((step, index) => (
+              <li key={step} className="task-item" style={{ padding: "14px 16px" }}>
+                <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 32, height: 32, borderRadius: "999px", background: "rgba(37, 78, 60, 0.1)", color: "var(--farm-green-deep)", fontWeight: 800 }}>{index + 1}</span>
+                <span style={{ flex: 1, fontWeight: 600 }}>{step}</span>
+              </li>
             ))}
-          </div>
+          </ol>
         </div>
       </section>
 
-      <section id="about" className="bg-[#f6f8f3] py-20">
-        <div className="mx-auto max-w-4xl px-6 text-center">
-          <p className="font-semibold text-green-600">About DigiFarm</p>
-          <h2 className="mt-3 text-4xl font-bold">Technology for better farming</h2>
-          <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-gray-600">
-            DigiFarm is a digital farm management platform designed to make everyday record keeping easier,
-            more organized, and more useful for farmers.
-          </p>
-
-          <div className="mt-10">
-            <Link
-              href="/register"
-              className="rounded-xl bg-green-600 px-7 py-3.5 font-semibold text-white transition hover:bg-green-700"
-            >
-              Start Using DigiFarm
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      <footer className="border-t border-gray-200 bg-white">
-        <div className="mx-auto flex max-w-7xl flex-col gap-3 px-6 py-8 text-sm text-gray-500 md:flex-row md:items-center md:justify-between">
-          <p>© 2026 DigiFarm. Built for farmers.</p>
-          <p>🌱 Grow smarter with DigiFarm</p>
+      <footer style={{ borderTop: "1px solid rgba(31, 56, 43, 0.12)", background: "rgba(255,255,255,0.4)" }}>
+        <div className="page-width" style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 12, padding: "20px 0" }}>
+          <Brand compact />
+          <p style={{ color: "rgba(28, 42, 35, 0.7)" }}>© 2026 DigiFarm</p>
         </div>
       </footer>
     </main>

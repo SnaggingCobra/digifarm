@@ -8,7 +8,7 @@ import { authErrorMessage, configurationMessage, getSupabaseConfig, safeRedirect
 import { farmerDetails } from "@/utils/supabase/farm";
 import { PasswordField } from "./password-field";
 import { FarmerFields } from "./farm-fields";
-import { Icon } from "@/components/icon";
+import { Icon } from "../icon";
 
 type Mode = "register" | "login" | "forgot" | "update";
 const labels: Record<Mode, string> = { register: "Create account", login: "Sign in", forgot: "Send reset link", update: "Save new password" };
@@ -92,9 +92,10 @@ export function AuthForm({ mode, next, notice = "" }: { mode: Mode; next?: strin
         {success && <p className="form-message success" role="status">{success}</p>}
         <button className="button button-primary w-full" type="submit" disabled={loading || !configured}>{loading ? "Please wait..." : labels[mode]}<Icon name="arrow-right" /></button>
       </fieldset>
+      
     </form>
     <div className="auth-footer">
-      {mode === "register" ? <p>Already have an account? <Link className="text-link" href="/login">Sign in</Link></p> : mode === "login" ? <><p>New to DigiFarm? <Link className="text-link" href="/register">Create an account</Link></p>{notice && <p><Link className="text-link" href="/forgot-password">Request a fresh recovery link</Link></p>}</> : mode === "update" ? <><Link className="text-link" href="/dashboard">Back to your farm</Link><p><Link className="text-link" href="/forgot-password">Request a new reset link</Link></p></> : <Link className="text-link" href="/login">Back to sign in</Link>}
+      {mode === "register" ? <p>Already have an account? <Link className="text-link" href="/login">Sign in</Link></p> : mode === "login" ? <><p>New to DigiFarm? <Link className="text-link" href="/signup">Create an account</Link></p>{notice && <p><Link className="text-link" href="/forgot-password">Request a fresh recovery link</Link></p>}</> : mode === "update" ? <><Link className="text-link" href="/dashboard">Back to your farm</Link><p><Link className="text-link" href="/forgot-password">Request a new reset link</Link></p></> : <Link className="text-link" href="/login">Back to sign in</Link>}
     </div>
   </>;
 }

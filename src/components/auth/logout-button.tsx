@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { authErrorMessage } from "@/utils/supabase/auth";
-import { Icon } from "@/components/icon";
+import { Icon } from "../icon";
 
 export function LogoutButton() {
   const router = useRouter();

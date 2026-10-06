@@ -21,17 +21,27 @@ test("untrusted errors and query strings are never reflected", () => {
 test("missing configuration and privileged keys are rejected", () => {
   const originalUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const originalKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  const originalAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   try {
     delete process.env.NEXT_PUBLIC_SUPABASE_URL;
     delete process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+    delete process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
     assert.equal(getSupabaseConfig(), null);
+
     process.env.NEXT_PUBLIC_SUPABASE_URL = "https://project.supabase.co";
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = "sb_secret_example";
     assert.equal(getSupabaseConfig(), null);
+
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = `header.${btoa(JSON.stringify({ role: "service_role" }))}.signature`;
     assert.equal(getSupabaseConfig(), null);
+
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_example";
     assert.ok(getSupabaseConfig());
+
+    delete process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiJ9.signature";
+    assert.ok(getSupabaseConfig());
+
     process.env.NEXT_PUBLIC_SUPABASE_URL = "javascript:alert(1)";
     assert.equal(getSupabaseConfig(), null);
   } finally {
@@ -39,6 +49,8 @@ test("missing configuration and privileged keys are rejected", () => {
     else process.env.NEXT_PUBLIC_SUPABASE_URL = originalUrl;
     if (originalKey === undefined) delete process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
     else process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = originalKey;
+    if (originalAnonKey === undefined) delete process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    else process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = originalAnonKey;
   }
 });
 

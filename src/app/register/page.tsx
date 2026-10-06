@@ -1,6 +1,6 @@
-import { AuthShell } from "@/components/auth/auth-shell";
-import { AuthForm } from "@/components/auth/auth-form";
+import { redirect } from "next/navigation";
 
 export default function RegisterPage() {
-  return <AuthShell title="Make room for growth." eyebrow="Create your farmer account"><AuthForm mode="register" /></AuthShell>;
+  redirect("/signup");
+  return null;
 }

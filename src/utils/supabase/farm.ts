@@ -28,3 +28,31 @@ export function readTasks(value: unknown): NotebookTask[] {
     return true;
   }).slice(0, taskLimit).map(({ id, title, done }) => ({ id, title, done }));
 }
+
+export const cropStatuses = [
+  "planned",
+  "growing",
+  "ready",
+  "harvested",
+
+
+] as const;
+
+export type CropStatus= (typeof cropStatuses)[number];
+
+export type Crop = {
+  id: string;
+  user_id: string;
+  name: string;
+  variety: string | null;
+  area: string | null;
+  area_unit: string | null;
+  planting_date: string | null;
+  expected_harvest_date: string | null;
+  status: CropStatus;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+
+
+};

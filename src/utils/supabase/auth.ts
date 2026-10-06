@@ -1,16 +1,32 @@
-export const configurationMessage = "Sign-in is not configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY, then restart the app.";
+export const configurationMessage = "Sign-in is not configured. Set NEXT_PUBLIC_SUPABASE_URL and either NEXT_PUBLIC_SUPABASE_ANON_KEY or NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY, then restart the app.";
+
+function isValidSupabaseKey(key: string) {
+  if (key.startsWith("sb_publishable_") || key.startsWith("sb_anon_")) {
+    return !key.startsWith("sb_secret_");
+  }
+
+  const segments = key.split(".");
+  if (segments.length < 2) return false;
+
+  try {
+    const payload = JSON.parse(
+      atob(segments[1].replace(/-/g, "+").replace(/_/g, "/"))
+    );
+    return payload && typeof payload === "object" && payload.role === "anon";
+  } catch {
+    return false;
+  }
+}
 
 export function getSupabaseConfig() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-  if (!url || !key || key.startsWith("sb_secret_")) return null;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+
+  if (!url || !key || !isValidSupabaseKey(key)) return null;
+
   try {
     const parsed = new URL(url);
     if (!["https:", "http:"].includes(parsed.protocol) || parsed.username || parsed.password) return null;
-    if (!key.startsWith("sb_publishable_")) {
-      const payload = JSON.parse(atob(key.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
-      if (payload.role !== "anon") return null;
-    }
     return { url, key };
   } catch {
     return null;

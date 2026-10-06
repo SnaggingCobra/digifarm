@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Brand } from "@/components/brand";
+import { Brand } from "../brand";
 
 export function AuthShell({ title, eyebrow, children }: { title: string; eyebrow: string; children: ReactNode }) {
   return (

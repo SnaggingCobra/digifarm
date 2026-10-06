@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Icon } from "@/components/icon";
+import { Icon } from "../icon";
 
 export function PasswordField({ name, label, newPassword = false }: { name: string; label: string; newPassword?: boolean }) {
   const [visible, setVisible] = useState(false);
