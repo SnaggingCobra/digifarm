@@ -44,6 +44,9 @@ test("missing configuration and privileged keys are rejected", () => {
 
     process.env.NEXT_PUBLIC_SUPABASE_URL = "javascript:alert(1)";
     assert.equal(getSupabaseConfig(), null);
+
+    process.env.NEXT_PUBLIC_SUPABASE_URL = "https://not-supabase.example";
+    assert.equal(getSupabaseConfig(), null);
   } finally {
     if (originalUrl === undefined) delete process.env.NEXT_PUBLIC_SUPABASE_URL;
     else process.env.NEXT_PUBLIC_SUPABASE_URL = originalUrl;

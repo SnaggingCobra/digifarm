@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Brand } from "@/components/brand";
 import { LogoutButton } from "@/components/auth/logout-button";
 import { createClient } from "@/utils/supabase/client";
@@ -31,7 +31,7 @@ export default function SettingsPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  async function loadProfile() {
+  const loadProfile = useCallback(async () => {
     try {
       setLoading(true);
       setError("");
@@ -65,11 +65,15 @@ export default function SettingsPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [supabase]);
 
   useEffect(() => {
-    void loadProfile();
-  }, [supabase]);
+    const handle = setTimeout(() => {
+      void loadProfile();
+    }, 0);
+
+    return () => clearTimeout(handle);
+  }, [loadProfile]);
 
   function updateField(field: keyof ProfileForm, value: string) {
     setForm((current) => ({ ...current, [field]: value }));

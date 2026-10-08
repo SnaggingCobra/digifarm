@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Brand } from "@/components/brand";
 import { LogoutButton } from "@/components/auth/logout-button";
 import { createClient } from "@/utils/supabase/client";
@@ -38,7 +38,7 @@ export default function CropsPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(baseForm);
 
-  async function loadCrops() {
+  const loadCrops = useCallback(async () => {
     try {
       setLoading(true);
       setError("");
@@ -55,11 +55,15 @@ export default function CropsPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [supabase]);
 
   useEffect(() => {
-    void loadCrops();
-  }, [supabase]);
+    const handle = setTimeout(() => {
+      void loadCrops();
+    }, 0);
+
+    return () => clearTimeout(handle);
+  }, [loadCrops]);
 
   function resetForm() {
     setForm(baseForm);
@@ -123,7 +127,14 @@ export default function CropsPage() {
         if (updateError) throw updateError;
         setSuccess("Crop updated successfully.");
       } else {
-        const { error: insertError } = await supabase.from("crops").insert(payload);
+        const { data: authData, error: authError } = await supabase.auth.getUser();
+        if (authError) throw authError;
+        if (!authData.user) throw new Error("Your session has expired. Please sign in again.");
+
+        const { error: insertError } = await supabase.from("crops").insert({
+          ...payload,
+          user_id: authData.user.id,
+        });
         if (insertError) throw insertError;
         setSuccess("Crop added successfully.");
       }

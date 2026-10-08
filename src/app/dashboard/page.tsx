@@ -102,14 +102,14 @@ export default async function DashboardPage() {
 
           <article className="stat-card">
             <span className="eyebrow" style={{ marginBottom: 0, fontSize: "0.7rem" }}>Expenses</span>
-            <strong>Rs. 0</strong>
-            <span style={{ color: "rgba(28, 42, 35, 0.7)" }}>Coming next</span>
+            <strong>Not available</strong>
+            <span style={{ color: "rgba(28, 42, 35, 0.7)" }}>Expense tracking is coming next</span>
           </article>
 
           <article className="stat-card">
             <span className="eyebrow" style={{ marginBottom: 0, fontSize: "0.7rem" }}>Revenue</span>
-            <strong>Rs. 0</strong>
-            <span style={{ color: "rgba(28, 42, 35, 0.7)" }}>Coming next</span>
+            <strong>Not available</strong>
+            <span style={{ color: "rgba(28, 42, 35, 0.7)" }}>Harvest and revenue tracking are coming next</span>
           </article>
         </section>
 

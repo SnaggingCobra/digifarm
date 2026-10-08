@@ -461,8 +461,12 @@ p {
     grid-template-columns: 1fr;
   }
 
+
+
+
   .auth-story {
     min-height: 280px;
+    
   }
 
   .dashboard-grid,

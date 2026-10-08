@@ -23,6 +23,13 @@ export async function createClient() {
 export async function getVerifiedUser() {
   try {
     const supabase = await createClient();
+    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims();
+    if (claimsError || !claimsData?.claims?.sub) {
+      return { user: null, error: claimsError ? authErrorMessage(claimsError) : "" };
+    }
+
+    // Claims establish the authentication boundary. getUser then supplies the
+    // current user metadata used by the dashboard and account forms.
     const { data, error } = await supabase.auth.getUser();
     return { user: error ? null : data.user, error: error ? authErrorMessage(error) : "" };
   } catch (error) {

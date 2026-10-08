@@ -20,13 +20,15 @@ function isValidSupabaseKey(key: string) {
 
 export function getSupabaseConfig() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!url || !key || !isValidSupabaseKey(key)) return null;
 
   try {
     const parsed = new URL(url);
-    if (!["https:", "http:"].includes(parsed.protocol) || parsed.username || parsed.password) return null;
+    const localProject = parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1";
+    const hostedProject = parsed.hostname.endsWith(".supabase.co") || parsed.hostname.endsWith(".supabase.in");
+    if ((parsed.protocol !== "https:" && !(localProject && parsed.protocol === "http:")) || parsed.username || parsed.password || (!localProject && !hostedProject)) return null;
     return { url, key };
   } catch {
     return null;
