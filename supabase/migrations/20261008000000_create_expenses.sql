@@ -72,7 +72,7 @@ create policy "Expenses are Updatable by owner"
 on public.expenses
 for update
 to authenticated
-using ((select auth.uid()) user_id)
+using ((select auth.uid()) = user_id)
 with check (
     (select auth.uid()) = user_id
     and (
