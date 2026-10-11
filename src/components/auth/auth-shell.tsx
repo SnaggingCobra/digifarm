@@ -1,10 +1,18 @@
 import type { ReactNode } from "react";
 import { Brand } from "../brand";
+import { FarmImage } from "../farm-image";
 
 export function AuthShell({ title, eyebrow, children }: { title: string; eyebrow: string; children: ReactNode }) {
   return (
     <main className="auth-layout">
-      <aside className="auth-story" style={{ backgroundImage: "linear-gradient(180deg, rgba(20, 45, 30, .2), rgba(20, 45, 30, .85)), url(https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1400&q=85)", backgroundSize: "cover", backgroundPosition: "center" }}>
+      <aside className="auth-story">
+        <FarmImage
+          src="/farm-landscape.jpg"
+          alt=""
+          sizes="(max-width: 900px) 100vw, 50vw"
+          priority
+          className="auth-story-image"
+        />
         <Brand light />
         <div className="auth-story-content">
           <p className="eyebrow">Rooted in your everyday</p>

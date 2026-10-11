@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { Brand } from "@/components/brand";
+import { FarmImage } from "@/components/farm-image";
 
 const features = [
-  { title: "Manage Crops", description: "Track each crop, planting date, and harvest window from one place.", icon: "🌱" },
-  { title: "Track Expenses", description: "Keep a clear view of farm spending before the season gets busy.", icon: "💰" },
-  { title: "Monitor Farm Activity", description: "See crop status and farm details in a simple, practical dashboard.", icon: "📍" },
-  { title: "Track Harvests", description: "Record what you harvest and follow up on expected output.", icon: "🚜" },
-  { title: "Understand Profitability", description: "Prepare your farm for informed decisions around costs and returns.", icon: "📊" },
+  { title: "Manage Crops", description: "Track each crop, planting date, and harvest window from one place.", icon: "🌱", image: "/healthy-farm.jpg", imageAlt: "Young crops growing in a field" },
+  { title: "Track Expenses", description: "Keep a clear view of farm spending before the season gets busy.", icon: "💰", image: "/farm-inventory.jpg", imageAlt: "Gardening tools and supplies ready for farm work" },
+  { title: "Monitor Farm Activity", description: "See crop status and farm details in a simple, practical dashboard.", icon: "📍", image: "/farm-irrigation.jpg", imageAlt: "Irrigation channel running through a green field" },
+  { title: "Track Harvests", description: "Record what you harvest and follow up on expected output.", icon: "🚜", image: "/farm-harvest.jpg", imageAlt: "A farmer holding freshly harvested grain" },
+  { title: "Understand Profitability", description: "Prepare your farm for informed decisions around costs and returns.", icon: "📊", image: "/farm-record.jpg", imageAlt: "Farm records being reviewed in a field" },
 ];
 
 const steps = [
@@ -55,6 +56,13 @@ export default function HomePage() {
           </div>
 
           <div className="dashboard-card" style={{ background: "rgba(255, 255, 255, 0.72)", padding: 24 }}>
+            <FarmImage
+              src="/farm-landscape.jpg"
+              alt="A broad view across cultivated green fields"
+              sizes="(max-width: 767px) 100vw, 45vw"
+              priority
+              className="home-hero-photo"
+            />
             <div className="stat-card" style={{ marginBottom: 16 }}>
               <div className="eyebrow" style={{ marginBottom: 0 }}>This season</div>
               <strong>14 active records</strong>
@@ -81,10 +89,18 @@ export default function HomePage() {
       <section className="page-width" style={{ padding: "20px 0 40px" }}>
         <div className="dashboard-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 20 }}>
           {features.map((feature) => (
-            <article key={feature.title} className="dashboard-card" style={{ padding: 22 }}>
-              <div style={{ fontSize: "2rem" }}>{feature.icon}</div>
-              <h2 style={{ marginTop: 12, fontSize: "1.45rem", color: "var(--farm-green-deep)" }}>{feature.title}</h2>
-              <p style={{ marginTop: 10, lineHeight: 1.7, color: "rgba(28, 42, 35, 0.7)" }}>{feature.description}</p>
+            <article key={feature.title} className="dashboard-card home-feature">
+              <FarmImage
+                src={feature.image}
+                alt={feature.imageAlt}
+                sizes="(max-width: 640px) 100vw, (max-width: 1000px) 50vw, 240px"
+                className="home-feature-photo"
+              />
+              <div className="home-feature-copy">
+                <div style={{ fontSize: "2rem" }}>{feature.icon}</div>
+                <h2 style={{ marginTop: 12, fontSize: "1.45rem", color: "var(--farm-green-deep)" }}>{feature.title}</h2>
+                <p style={{ marginTop: 10, lineHeight: 1.7, color: "rgba(28, 42, 35, 0.7)" }}>{feature.description}</p>
+              </div>
             </article>
           ))}
         </div>
@@ -92,7 +108,9 @@ export default function HomePage() {
 
       <section className="page-width" style={{ padding: "32px 0 72px" }}>
         <div className="dashboard-card" style={{ padding: 28 }}>
+
           <p className="eyebrow">How it works</p>
+          
           <h2 style={{ fontSize: "clamp(2rem, 4vw, 3rem)", color: "var(--farm-green-deep)" }}>A simple path to better farm decisions.</h2>
           <ol style={{ listStyle: "none", padding: 0, margin: "24px 0 0", display: "grid", gap: 16 }}>
             {steps.map((step, index) => (
@@ -103,6 +121,7 @@ export default function HomePage() {
             ))}
           </ol>
         </div>
+
       </section>
 
       <footer style={{ borderTop: "1px solid rgba(31, 56, 43, 0.12)", background: "rgba(255,255,255,0.4)" }}>
@@ -110,7 +129,11 @@ export default function HomePage() {
           <Brand compact />
           <p style={{ color: "rgba(28, 42, 35, 0.7)" }}>© 2026 DigiFarm</p>
         </div>
+
       </footer>
+
     </main>
+
+
   );
 }

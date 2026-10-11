@@ -12,6 +12,11 @@ create table if not exists public.profiles (
   land_unit text check (land_unit is null or land_unit in ('ropani', 'aana', 'bigha', 'kattha', 'dhur', 'hectare', 'acre'))
 );
 
+
+
+
+
+
 create table if not exists public.crops (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,

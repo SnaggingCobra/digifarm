@@ -19,6 +19,9 @@ export function createResponseClient(request: NextRequest) {
     },
   });
 
+  
+
+
   function applyCookies(response: NextResponse) {
     pendingCookies.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
     cacheHeaders.forEach((value, name) => response.headers.set(name, value));

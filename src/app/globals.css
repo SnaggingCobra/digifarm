@@ -111,11 +111,42 @@ p {
 
 .auth-story {
   position: relative;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   padding: 32px 28px 36px;
   min-height: 100vh;
+}
+
+.farm-image {
+  position: relative;
+  display: block;
+  overflow: hidden;
+}
+
+.farm-image > img {
+  object-fit: cover;
+}
+
+.auth-story-image {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  height: 100%;
+}
+
+.auth-story-image::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(20, 45, 30, 0.2), rgba(20, 45, 30, 0.85));
+  pointer-events: none;
+}
+
+.auth-story > :not(.auth-story-image) {
+  position: relative;
+  z-index: 1;
 }
 
 .auth-story-content {
@@ -390,6 +421,73 @@ p {
   gap: 24px;
 }
 
+.home-hero-photo {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 14px;
+  margin-bottom: 16px;
+}
+
+.home-feature {
+  padding: 0;
+  overflow: hidden;
+}
+
+.home-feature-photo {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+}
+
+.home-feature-copy {
+  padding: 18px 20px 22px;
+}
+
+.dashboard-welcome {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 0.72fr);
+  align-items: center;
+  gap: 24px;
+}
+
+.dashboard-welcome-photo {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 16px;
+}
+
+.dashboard-action-card {
+  padding: 0;
+  overflow: hidden;
+}
+
+.dashboard-action-photo {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+}
+
+.dashboard-action-copy {
+  padding: 18px 22px 22px;
+}
+
+.dashboard-action-card-plain {
+  display: flex;
+  align-items: center;
+}
+
+.empty-state-photo {
+  width: min(100%, 340px);
+  aspect-ratio: 16 / 9;
+  border-radius: 12px;
+  margin-bottom: 8px;
+}
+
+.crop-record-photo {
+  flex: 0 0 88px;
+  width: 88px;
+  aspect-ratio: 1;
+  border-radius: 10px;
+}
+
 .dashboard-card {
   background: rgba(255,255,255,0.8);
   border: 1px solid var(--farm-border);
@@ -472,6 +570,10 @@ p {
   .dashboard-grid,
   .dashboard-stats,
   .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-welcome {
     grid-template-columns: 1fr;
   }
 }

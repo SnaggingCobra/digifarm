@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Brand } from "@/components/brand";
 import { LogoutButton } from "@/components/auth/logout-button";
+import { FarmImage } from "@/components/farm-image";
 import { createClient, getVerifiedUser } from "@/utils/supabase/server";
 
 function getGreeting(fullName: string) {
@@ -72,14 +73,22 @@ export default async function DashboardPage() {
       </header>
 
       <main className="page-width dashboard-main">
-        <section>
-          <p className="eyebrow" style={{ marginBottom: 8 }}>{farmName}</p>
-          <h1 className="dashboard-header" style={{ margin: 0 }}>
-            {getGreeting(fullName)}
-          </h1>
-          <p style={{ marginTop: 10, color: "rgba(28, 42, 35, 0.68)" }}>
-            Here&apos;s what&apos;s happening on your farm today.
-          </p>
+        <section className="dashboard-welcome">
+          <div>
+            <p className="eyebrow" style={{ marginBottom: 8 }}>{farmName}</p>
+            <h1 className="dashboard-header" style={{ margin: 0 }}>
+              {getGreeting(fullName)}
+            </h1>
+            <p style={{ marginTop: 10, color: "rgba(28, 42, 35, 0.68)" }}>
+              Here&apos;s what&apos;s happening on your farm today.
+            </p>
+          </div>
+          <FarmImage
+            src="/healthy-farm.jpg"
+            alt="Young crops growing in a field"
+            sizes="(max-width: 900px) 100vw, 38vw"
+            className="dashboard-welcome-photo"
+          />
         </section>
 
         {profileError && (
@@ -140,7 +149,12 @@ export default async function DashboardPage() {
             </div>
           ) : (
             <div className="empty-state" style={{ marginTop: 18 }}>
-              <p style={{ fontSize: "2.5rem" }}>🌱</p>
+              <FarmImage
+                src="/farm-empty.jpg"
+                alt="An open field ready for the next crop"
+                sizes="(max-width: 640px) 90vw, 340px"
+                className="empty-state-photo"
+              />
               <h3>No crops added yet</h3>
               <p style={{ color: "rgba(28, 42, 35, 0.7)" }}>Add your first crop to start managing your farm plan.</p>
               <Link href="/dashboard/crops" className="button button-primary" style={{ marginTop: 8 }}>
@@ -151,22 +165,38 @@ export default async function DashboardPage() {
         </section>
 
         <section className="dashboard-grid" style={{ marginTop: 24, gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
-          <Link href="/dashboard/crops" className="dashboard-card" style={{ padding: 22 }}>
-            <div style={{ fontSize: "2.2rem" }}>🌱</div>
-            <h3 style={{ marginTop: 12, color: "var(--farm-green-deep)", fontSize: "1.5rem" }}>Manage Crops</h3>
-            <p style={{ marginTop: 8, color: "rgba(28, 42, 35, 0.72)" }}>Update crop status, planting dates, and harvest plans.</p>
+          <Link href="/dashboard/crops" className="dashboard-card dashboard-action-card">
+            <FarmImage
+              src="/rice.jpg"
+              alt="Rice growing in a green field"
+              sizes="(max-width: 900px) 100vw, 33vw"
+              className="dashboard-action-photo"
+            />
+            <div className="dashboard-action-copy">
+              <h3 style={{ color: "var(--farm-green-deep)", fontSize: "1.5rem" }}>Manage Crops</h3>
+              <p style={{ marginTop: 8, color: "rgba(28, 42, 35, 0.72)" }}>Update crop status, planting dates, and harvest plans.</p>
+            </div>
           </Link>
 
-          <div className="dashboard-card" style={{ padding: 22 }}>
-            <div style={{ fontSize: "2.2rem" }}>💰</div>
-            <h3 style={{ marginTop: 12, color: "var(--farm-green-deep)", fontSize: "1.5rem" }}>Track Expenses</h3>
-            <p style={{ marginTop: 8, color: "rgba(28, 42, 35, 0.72)" }}>Supporting expense tracking is coming soon.</p>
+          <div className="dashboard-card dashboard-action-card">
+            <FarmImage
+              src="/farm-inventory.jpg"
+              alt="Farm supplies and tools laid out for planning"
+              sizes="(max-width: 900px) 100vw, 33vw"
+              className="dashboard-action-photo"
+            />
+            <div className="dashboard-action-copy">
+              <h3 style={{ color: "var(--farm-green-deep)", fontSize: "1.5rem" }}>Track Expenses</h3>
+              <p style={{ marginTop: 8, color: "rgba(28, 42, 35, 0.72)" }}>Supporting expense tracking is coming soon.</p>
+            </div>
           </div>
 
-          <Link href="/dashboard/settings" className="dashboard-card" style={{ padding: 22 }}>
-            <div style={{ fontSize: "2.2rem" }}>⚙️</div>
-            <h3 style={{ marginTop: 12, color: "var(--farm-green-deep)", fontSize: "1.5rem" }}>Farm Settings</h3>
-            <p style={{ marginTop: 8, color: "rgba(28, 42, 35, 0.72)" }}>Update farmer and farm information with ease.</p>
+          <Link href="/dashboard/settings" className="dashboard-card dashboard-action-card dashboard-action-card-plain">
+            <div className="dashboard-action-copy">
+              <div style={{ fontSize: "2.2rem" }}>⚙️</div>
+              <h3 style={{ marginTop: 12, color: "var(--farm-green-deep)", fontSize: "1.5rem" }}>Farm Settings</h3>
+              <p style={{ marginTop: 8, color: "rgba(28, 42, 35, 0.72)" }}>Update farmer and farm information with ease.</p>
+            </div>
           </Link>
         </section>
       </main>

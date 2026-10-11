@@ -19,6 +19,9 @@ drop policy if exists "Crops are deletable by owner" on public.crops;
 
 create policy "Profiles are viewable by owner"
 on public.profiles for select to authenticated
+
+
+
 using ((select auth.uid()) = id);
 
 create policy "Profiles are insertable by owner"

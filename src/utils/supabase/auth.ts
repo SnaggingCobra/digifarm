@@ -49,13 +49,22 @@ export function authErrorMessage(error: unknown): string {
   if (error instanceof Error && error.message === configurationMessage) return configurationMessage;
   const code = error && typeof error === "object" && "code" in error ? error.code : undefined;
   switch (code) {
-    case "invalid_credentials": return "The email or password is incorrect.";
-    case "email_not_confirmed": return "Confirm your email before signing in. Check your inbox for the confirmation link.";
-    case "user_already_exists": case "email_exists": return "Unable to create this account. Try signing in or resetting your password.";
-    case "weak_password": return "Choose a stronger password with at least 8 characters, including letters, numbers, and symbols.";
-    case "same_password": return "Choose a password different from your current password.";
-    case "over_email_send_rate_limit": case "over_request_rate_limit": return "Too many attempts. Please wait a few minutes before trying again.";
-    case "otp_expired": case "flow_state_expired": case "flow_state_not_found": return "This link has expired or has already been used. Request a new link.";
+    case "invalid_credentials": 
+      return "The email or password is incorrect.";
+    case "email_not_confirmed": 
+      return "Confirm your email before signing in. Check your inbox for the confirmation link.";
+    case "user_already_exists":
+     case "email_exists":
+       return "Unable to create this account. Try signing in or resetting your password.";
+    case "weak_password":
+       return "Choose a stronger password with at least 8 characters, including letters, numbers, and symbols.";
+    case "same_password":
+       return "Choose a password different from your current password.";
+    case "over_email_send_rate_limit":
+     case "over_request_rate_limit": return "Too many attempts. Please wait a few minutes before trying again.";
+    case "otp_expired": case "flow_state_expired":
+     case "flow_state_not_found":
+       return "This link has expired or has already been used. Request a new link.";
     case "session_not_found": case "refresh_token_not_found": case "refresh_token_already_used": return "Your session has expired. Please sign in again.";
     case "reauthentication_needed": return "Please sign in again before changing your password.";
     case "signup_disabled": return "New account registration is currently unavailable.";

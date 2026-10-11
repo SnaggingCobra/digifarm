@@ -1,5 +1,6 @@
 create table if not exists public.expenses (
     id uuid primary key default gen_random_uuid(),
+   
     user_id uuid not null references auth.users (id) on delete cascade,
     crop_id uuid references public.crops (id) on delete set null,
     category text not null check (
@@ -18,6 +19,7 @@ create table if not exists public.expenses (
         'Other'
     )
 ),
+
 
 description text,
 amount numeric(12, 2) not null

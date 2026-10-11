@@ -4,7 +4,22 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Brand } from "@/components/brand";
 import { LogoutButton } from "@/components/auth/logout-button";
+import { FarmImage } from "@/components/farm-image";
 import { createClient } from "@/utils/supabase/client";
+
+const cropImages: Record<string, string> = {
+  rice: "/rice.jpg",
+  maize: "/maize.jpg",
+  corn: "/maize.jpg",
+  wheat: "/wheat.jpg",
+  mustard: "/mustard.jpg",
+  potato: "/potato.jpg",
+  cauliflower: "/cauliflower.jpg",
+};
+
+function getCropImage(name: string) {
+  return cropImages[name.trim().toLowerCase()] ?? "/farm-empty.jpg";
+}
 
 type CropRecord = {
   id: string;
@@ -273,7 +288,12 @@ export default function CropsPage() {
               <p className="form-message success" style={{ marginTop: 18 }}>Loading your crop records...</p>
             ) : crops.length === 0 ? (
               <div className="empty-state" style={{ marginTop: 18 }}>
-                <p style={{ fontSize: "2.2rem" }}>🌱</p>
+                <FarmImage
+                  src="/farm-empty.jpg"
+                  alt="An open field ready for the next crop"
+                  sizes="(max-width: 640px) 90vw, 340px"
+                  className="empty-state-photo"
+                />
                 <h3>No crops yet</h3>
                 <p style={{ color: "rgba(28, 42, 35, 0.7)" }}>Add your first crop to start tracking the season.</p>
               </div>
@@ -281,6 +301,12 @@ export default function CropsPage() {
               <div style={{ display: "grid", gap: 14, marginTop: 18 }}>
                 {crops.map((crop) => (
                   <article key={crop.id} className="task-item" style={{ alignItems: "flex-start", padding: 12 }}>
+                    <FarmImage
+                      src={getCropImage(crop.name)}
+                      alt={`${crop.name} growing in a field`}
+                      sizes="88px"
+                      className="crop-record-photo"
+                    />
                     <div style={{ flex: 1 }}>
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
                         <strong>{crop.name}</strong>
