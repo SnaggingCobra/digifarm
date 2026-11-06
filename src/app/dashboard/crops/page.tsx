@@ -249,18 +249,23 @@ export default function CropsPage() {
                   <option value="harvested">Harvested</option>
                   <option value="completed">Completed</option>
                 </select>
+              
               </div>
 
               <div className="form-grid">
                 <div className="field">
                   <label htmlFor="planting-date">Planting date</label>
                   <input id="planting-date" type="date" value={form.planting_date} onChange={(event) => updateField("planting_date", event.target.value)} />
+
                 </div>
 
                 <div className="field">
+                
                   <label htmlFor="harvest-date">Expected harvest</label>
+                
                   <input id="harvest-date" type="date" value={form.expected_harvest_date} onChange={(event) => updateField("expected_harvest_date", event.target.value)} />
                 </div>
+
               </div>
 
               <div className="field">
@@ -277,8 +282,11 @@ export default function CropsPage() {
                     Cancel
                   </button>
                 )}
+             
               </div>
+            
             </form>
+          
           </section>
 
           <section className="dashboard-card">

@@ -180,9 +180,12 @@ export default async function DashboardPage() {
 
           <div className="dashboard-card dashboard-action-card">
             <FarmImage
-              src="/farm-inventory.jpg"
+
+            
+            src="/farm-inventory.jpg"
               alt="Farm supplies and tools laid out for planning"
-              sizes="(max-width: 900px) 100vw, 33vw"
+            
+            sizes="(max-width: 900px) 100vw, 33vw"
               className="dashboard-action-photo"
             />
             <div className="dashboard-action-copy">

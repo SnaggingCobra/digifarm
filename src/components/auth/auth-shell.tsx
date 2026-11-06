@@ -17,13 +17,17 @@ export function AuthShell({ title, eyebrow, children }: { title: string; eyebrow
         <div className="auth-story-content">
           <p className="eyebrow">Rooted in your everyday</p>
           <h2 style={{ fontFamily: "Georgia, serif" }}>A little more clarity.<br />Room to grow.</h2>
+          
           <p>For the land you tend, and the days ahead.</p>
         </div>
       </aside>
       <section className="auth-panel" aria-labelledby="auth-title">
         <div className="auth-card">
-          <div className="mb-8 lg:hidden"><Brand /></div>
+          <
+            div className="mb-8 lg:hidden"><Brand /></div>
           <header className="auth-heading">
+            
+            
             <p className="eyebrow">{eyebrow}</p>
             <h1 id="auth-title" style={{ fontFamily: "Georgia, serif" }}>{title}</h1>
           </header>
