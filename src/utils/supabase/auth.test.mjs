@@ -5,6 +5,10 @@ import { farmerDetails, readTasks, taskLimit } from "./farm.ts";
 
 test("redirects allow only exact local destinations", () => {
   assert.equal(safeRedirect("/dashboard"), "/dashboard");
+  assert.equal(safeRedirect("/dashboard/crops"), "/dashboard/crops");
+  assert.equal(safeRedirect("/dashboard/expenses"), "/dashboard/expenses");
+  assert.equal(safeRedirect("/dashboard/notebook"), "/dashboard/notebook");
+  assert.equal(safeRedirect("/dashboard/settings"), "/dashboard/settings");
   assert.equal(safeRedirect("/update-password"), "/update-password");
   for (const destination of [null, undefined, "https://evil.test", "//evil.test", "/\\evil.test", "/dashboard/../auth/callback", "/update-password?next=https://evil.test", "%2f%2fevil.test", ["/update-password"]]) {
     assert.equal(safeRedirect(destination), "/dashboard");

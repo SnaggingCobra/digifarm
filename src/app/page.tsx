@@ -3,19 +3,15 @@ import { Brand } from "@/components/brand";
 import { FarmImage } from "@/components/farm-image";
 
 const features = [
-  { title: "Manage Crops", description: "Track each crop, planting date, and harvest window from one place.", icon: "🌱", image: "/healthy-farm.jpg", imageAlt: "Young crops growing in a field" },
-  { title: "Track Expenses", description: "Keep a clear view of farm spending before the season gets busy.", icon: "💰", image: "/farm-inventory.jpg", imageAlt: "Gardening tools and supplies ready for farm work" },
-  { title: "Monitor Farm Activity", description: "See crop status and farm details in a simple, practical dashboard.", icon: "📍", image: "/farm-irrigation.jpg", imageAlt: "Irrigation channel running through a green field" },
-  { title: "Track Harvests", description: "Record what you harvest and follow up on expected output.", icon: "🚜", image: "/farm-harvest.jpg", imageAlt: "A farmer holding freshly harvested grain" },
-  { title: "Understand Profitability", description: "Prepare your farm for informed decisions around costs and returns.", icon: "📊", image: "/farm-record.jpg", imageAlt: "Farm records being reviewed in a field" },
+  { title: "Farm profile", description: "Keep your farm name, location, size, and farmer details together.", icon: "📍", image: "/farm-landscape.jpg", imageAlt: "Cultivated fields around a farm" },
+  { title: "Crop records", description: "Record varieties, planting dates, expected harvests, and crop status.", icon: "🌱", image: "/healthy-farm.jpg", imageAlt: "Young crops growing in a field" },
+  { title: "Expense tracking", description: "Record farm spending and optionally connect each cost to a crop.", icon: "💰", image: "/farm-inventory.jpg", imageAlt: "Gardening tools and supplies ready for farm work" },
 ];
 
 const steps = [
-  "Create your account",
-  "Add your farm",
-  "Add your crops",
-  "Track farm activity",
-  "Understand your farm performance",
+  "Create your farmer account",
+  "Add your farm details",
+  "Record crops and expenses",
 ];
 
 export default function HomePage() {
@@ -63,23 +59,14 @@ export default function HomePage() {
               priority
               className="home-hero-photo"
             />
-            <div className="stat-card" style={{ marginBottom: 16 }}>
-              <div className="eyebrow" style={{ marginBottom: 0 }}>This season</div>
-              <strong>14 active records</strong>
-              <span style={{ color: "rgba(28, 42, 35, 0.7)", fontSize: "0.96rem" }}>Crops, fields, and progress tracked in one view.</span>
-            </div>
             <div className="dashboard-grid" style={{ gridTemplateColumns: "1fr", gap: 12 }}>
               <div className="task-item">
-                <span>🌾 Rice</span>
-                <span className="tag">Growing</span>
+                <span>Farmer-owned farm profile</span>
+                <span className="tag">Private</span>
               </div>
               <div className="task-item">
-                <span>🥬 Mustard</span>
-                <span className="tag">Planned</span>
-              </div>
-              <div className="task-item">
-                <span>🌽 Maize</span>
-                <span className="tag">Ready</span>
+                <span>Crop and expense records</span>
+                <span className="tag">Organized</span>
               </div>
             </div>
           </div>

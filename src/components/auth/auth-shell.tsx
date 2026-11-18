@@ -23,8 +23,7 @@ export function AuthShell({ title, eyebrow, children }: { title: string; eyebrow
       </aside>
       <section className="auth-panel" aria-labelledby="auth-title">
         <div className="auth-card">
-          <
-            div className="mb-8 lg:hidden"><Brand /></div>
+          <div className="mb-8 lg:hidden"><Brand /></div>
           <header className="auth-heading">
             
             

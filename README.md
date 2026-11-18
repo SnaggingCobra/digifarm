@@ -1,36 +1,47 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# DigiFarm
 
-## Getting Started
+DigiFarm is a farm management application built with Next.js, React, TypeScript, and Supabase. Farmers can manage their farm profile, crop records, farm expenses, and a short farm-task notebook. Each farmer's private records are protected by Supabase Row Level Security.
 
-First, run the development server:
+## Requirements
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- Node.js compatible with the installed Next.js 16 release
+- A Supabase project with the migrations in `supabase/migrations/` applied
+
+## Local setup
+
+Install dependencies and create `.env.local` with the Supabase project URL and a public client key:
+
+```text
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-publishable-key
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+`NEXT_PUBLIC_SUPABASE_ANON_KEY` is also supported for projects still using the legacy anon key. Never put a service-role or secret key in a `NEXT_PUBLIC_` variable.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Then start the application:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm install
+npm run dev
+```
 
-## Learn More
+## Database
 
-To learn more about Next.js, take a look at the following resources:
+Apply the migrations in `supabase/migrations/` to the linked Supabase project in timestamp order. Do not reset a project containing farmer data. The migrations create farmer profiles, crops, and expenses, with owner-scoped RLS policies.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Authentication email confirmation and password recovery require the Supabase Auth email settings and redirect URLs to include the local application origin.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Checks
 
-## Deploy on Vercel
+```bash
+npm run lint
+npm run build
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+The focused utility tests can be run with a Node.js version that supports TypeScript type stripping:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+node --experimental-strip-types --test src/utils/supabase/auth.test.mjs
+```
+
+The current application does not yet record harvest quantities or revenue; those values are not presented as live farm statistics.

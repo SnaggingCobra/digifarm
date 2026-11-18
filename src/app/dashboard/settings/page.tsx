@@ -97,8 +97,12 @@ export default function SettingsPage() {
       if (nextForm.farm_name.length > 100) throw new Error("Farm name must be 100 characters or fewer.");
       if (nextForm.farm_location.length > 160) throw new Error("Farm location must be 160 characters or fewer.");
 
-      if (nextForm.farm_size && Number.isNaN(Number(nextForm.farm_size))) {
-        throw new Error("Farm size must be a number.");
+      const farmSize = nextForm.farm_size ? Number(nextForm.farm_size) : null;
+      if (farmSize !== null && (!Number.isFinite(farmSize) || farmSize < 0)) {
+        throw new Error("Enter a farm size that is zero or greater.");
+      }
+      if (!landUnits.some((unit) => unit === nextForm.land_unit)) {
+        throw new Error("Choose a valid land unit.");
       }
 
       const payload = {
@@ -106,8 +110,8 @@ export default function SettingsPage() {
         full_name: nextForm.full_name,
         farm_name: nextForm.farm_name || null,
         farm_location: nextForm.farm_location || null,
-        farm_size: nextForm.farm_size ? Number(nextForm.farm_size) : null,
-        land_unit: nextForm.land_unit || "ropani",
+        farm_size: farmSize,
+        land_unit: nextForm.land_unit,
         updated_at: new Date().toISOString(),
       };
 
@@ -130,6 +134,8 @@ export default function SettingsPage() {
           <nav aria-label="Farm settings navigation" className="flex flex-wrap items-center gap-4">
             <Link href="/dashboard" className="text-link text-sm">Dashboard</Link>
             <Link href="/dashboard/crops" className="text-link text-sm">Crops</Link>
+            <Link href="/dashboard/expenses" className="text-link text-sm">Expenses</Link>
+            <Link href="/dashboard/notebook" className="text-link text-sm">Notebook</Link>
             <LogoutButton />
           </nav>
         </div>

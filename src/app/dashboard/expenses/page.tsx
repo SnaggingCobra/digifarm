@@ -1,11 +1,10 @@
 "use client";
 
-import Link from "next/link";;
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Brand } from "@/components/brand";
 import { LogoutButton } from "@/components/auth/logout-button";
 import { createClient } from "@/utils/supabase/client";
-import { setFlagsFromString } from "v8";
 
 const categories = [
     "Seeds",
@@ -17,7 +16,7 @@ const categories = [
     "Transport",
     "Land Preparation",
     "Animal Feed",
-    "Electicity",
+    "Electricity",
     "Fuel",
     "Other",
 ] as const;
@@ -25,7 +24,7 @@ const categories = [
 type ExpenseCategory = (typeof categories ) [number];
 type CropOption = {
     id: string;
-    name: string:
+  name: string;
     variety: string | null;
     
 };
@@ -82,27 +81,30 @@ function formatMoney(amount: number) {
 export default function ExpensesPage() {
     const supabase = useMemo(() => createClient(), []);
     const [expenses, setExpenses] = useState<ExpenseRecord[]>([]);
+  const [crops, setCrops] = useState<CropOption[]>([]);
     const [form, setForm] = useState<ExpenseForm>(emptyForm);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [search, setSearch] = useState("");
-    const [categoryFilter, setCategoryFilter] = useState("ALL");
+    const [categoryFilter, setCategoryFilter] = useState("All");
     const [loading, setLoading] = useState(true);
-    const [saving, setSaving] = useState(true);
-    const [error, setError] = useState(false);
+    const [loadFailed, setLoadFailed] = useState(false);
+    const [saving, setSaving] = useState(false);
+    const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
 
     const loadData = useCallback(async () => {
         setLoading(true);
+        setLoadFailed(false);
         setError("");
 
         try {
-            const {data: authData, error: authError }
-                await supabase.auth.getUser();
+            const { data: authData, error: authError } =
+              await supabase.auth.getUser();
 
             if (authError) throw authError;
 
             if (!authData.user) {
-                window.location.replace("/login?notice=sessio");
+                window.location.replace("/login?notice=session");
                 return;
 
             }
@@ -111,7 +113,7 @@ export default function ExpensesPage() {
                 supabase
                 .from("expenses")
                 .select(
-                    "id, user_id, crop_id, category, discription, amount, expense_date, notes, created_at",
+                    "id, user_id, crop_id, category, description, amount, expense_date, notes, created_at",
                 )
                 .eq("user_id", authData.user.id)
                 .order("expense_date", { ascending: false })
@@ -134,18 +136,13 @@ export default function ExpensesPage() {
         } 
         catch (loadError) {
             console.error("failed to load expenses", loadError);
-            setError(
-                loadError instanceof Error
-                ? loadError.message
-                : "could not load your expenses. Please try again",
-
-            );
+            setLoadFailed(true);
+            setError("We couldn't load your expenses. Please try again.");
         } finally {
             setLoading(false);
 
         }
     }, [supabase]);
-}
 
 useEffect(() => {
     const timer = setTimeout(() => {
@@ -193,7 +190,14 @@ useEffect(() => {
     );
   });
 
-  function cancleEditing() {
+  function updateField<Field extends keyof ExpenseForm>(
+    field: Field,
+    value: ExpenseForm[Field],
+  ) {
+    setForm((current) => ({ ...current, [field]: value }));
+  }
+
+  function cancelEditing() {
     setEditingId(null);
     setForm(emptyForm());
     setError("");
@@ -202,18 +206,19 @@ useEffect(() => {
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (saving) return;
     setError("");
     setSuccess("");
 
     const amount = Number(form.amount);
 
-    if (!Number.isFinite(amount) || amount <= 0) {
-      setError("Enter an amount greater than zero.");
+    if (!Number.isFinite(amount) || amount < 0.01) {
+      setError("Enter an amount of at least Rs. 0.01.");
       return;
     }
 
-    if (!form.expense_date) {
-      setError("Please select the expense date.");
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(form.expense_date) || Number.isNaN(Date.parse(form.expense_date))) {
+      setError("Please select a valid expense date.");
       return;
     }
 
@@ -261,11 +266,7 @@ useEffect(() => {
       await loadData();
     } catch (saveError) {
       console.error("Failed to save expense:", saveError);
-      setError(
-        saveError instanceof Error
-          ? saveError.message
-          : "Could not save the expense. Please try again.",
-      );
+      setError("We couldn't save the expense. Please try again.");
     } finally {
       setSaving(false);
     }
@@ -327,11 +328,7 @@ useEffect(() => {
       await loadData();
     } catch (deleteError) {
       console.error("Failed to delete expense:", deleteError);
-      setError(
-        deleteError instanceof Error
-          ? deleteError.message
-          : "Could not delete the expense. Please try again.",
-      );
+      setError("We couldn't delete the expense. Please try again.");
     }
   }
 
@@ -348,6 +345,10 @@ useEffect(() => {
             DashBoard</Link>
             <Link href="/dashboard/crops" className="text-link text-sm">
             Crops </Link>
+            <Link href="/dashboard/expenses" className="text-link text-sm">
+            Expenses</Link>
+            <Link href="/dashboard/notebook" className="text-link text-sm">
+            Notebook</Link>
             <Link href="/dashboard/settings" className="text-link text-sm">
             Settings</Link>
             <LogoutButton />
@@ -635,6 +636,10 @@ useEffect(() => {
 
           {loading ? (
             <p role="status">Loading your expenses...</p>
+          ) : loadFailed ? (
+            <button type="button" className="button button-secondary" onClick={() => void loadData()}>
+              Retry loading expenses
+            </button>
           ) : filteredExpenses.length === 0 ? (
             <div className="empty-state">
               <h3>

@@ -41,8 +41,17 @@ export function requireSupabaseConfig() {
   return config;
 }
 
-export function safeRedirect(value: unknown): "/dashboard" | "/update-password" {
-  return value === "/update-password" ? "/update-password" : "/dashboard";
+const safeRedirectPaths = [
+  "/dashboard",
+  "/dashboard/crops",
+  "/dashboard/expenses",
+  "/dashboard/notebook",
+  "/dashboard/settings",
+  "/update-password",
+] as const;
+
+export function safeRedirect(value: unknown): (typeof safeRedirectPaths)[number] {
+  return safeRedirectPaths.find((path) => path === value) ?? "/dashboard";
 }
 
 export function authErrorMessage(error: unknown): string {

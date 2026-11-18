@@ -3,7 +3,7 @@ import { getSupabaseConfig, safeRedirect } from "@/utils/supabase/auth";
 import { createResponseClient, localRedirect } from "@/utils/supabase/response";
 
 export async function GET(request: NextRequest) {
-  if (!getSupabaseConfig()) return localRedirect("/login?notice=configuration");
+  if (!getSupabaseConfig()) return localRedirect("/login?notice=configuration", request.url);
   const { searchParams } = request.nextUrl;
   const code = searchParams.get("code");
   const tokenHash = searchParams.get("token_hash");
@@ -18,11 +18,11 @@ export async function GET(request: NextRequest) {
           ? await supabase.auth.verifyOtp({ token_hash: tokenHash, type })
           : null;
       if (result && !result.error && result.data.session) {
-        return applyCookies(localRedirect(next));
+        return applyCookies(localRedirect(next, request.url));
       }
     }
-    return applyCookies(localRedirect("/login?notice=callback"));
+    return applyCookies(localRedirect("/login?notice=callback", request.url));
   } catch {
-    return applyCookies(localRedirect("/login?notice=unavailable"));
+    return applyCookies(localRedirect("/login?notice=unavailable", request.url));
   }
 }

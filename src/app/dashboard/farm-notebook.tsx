@@ -21,7 +21,6 @@ type FarmProfile = {
   farm_location: string | null;
   farm_size: number | null;
   land_unit: string | null;
-  profile_picture_url: string | null;
 };
 
 type FarmNotebookProps = {
@@ -96,7 +95,7 @@ export function FarmNotebook({
             }
           )
           .select(
-            "id, full_name, phone, farm_name, farm_location, farm_size, land_unit, profile_picture_url"
+            "id, full_name, phone, farm_name, farm_location, farm_size, land_unit"
           )
           .single();
 
@@ -214,6 +213,10 @@ export function FarmNotebook({
     task: NotebookTask,
     remove: boolean
   ) {
+    if (remove && !window.confirm(`Delete the task "${task.title}"?`)) {
+      return;
+    }
+
     await saveTaskMetadata(
       (current) => {
         const currentTasks = readTasks(

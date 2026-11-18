@@ -30,9 +30,9 @@ export function createResponseClient(request: NextRequest) {
   return { supabase, applyCookies };
 }
 
-export function localRedirect(path: string) {
+export function localRedirect(path: string, requestUrl: string) {
   return new NextResponse(null, {
     status: 303,
-    headers: { Location: path, "Cache-Control": "private, no-store", "Referrer-Policy": "no-referrer" },
+    headers: { Location: new URL(path, requestUrl).toString(), "Cache-Control": "private, no-store", "Referrer-Policy": "no-referrer" },
   });
 }

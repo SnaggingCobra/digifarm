@@ -14,6 +14,13 @@ function getGreeting(fullName: string) {
   return `Good Evening, ${name}`;
 }
 
+function formatMoney(amount: number) {
+  return `Rs. ${new Intl.NumberFormat("en-NP", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(amount)}`;
+}
+
 export default async function DashboardPage() {
   const { user, error } = await getVerifiedUser();
 
@@ -50,8 +57,29 @@ export default async function DashboardPage() {
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
 
-  const activeCrops =
-    crops?.filter((crop) => ["planned", "growing", "ready"].includes(crop.status)).length ?? 0;
+  const { data: expenses, error: expensesError } = await supabase
+    .from("expenses")
+    .select("id, category, description, amount, expense_date")
+    .eq("user_id", user.id)
+    .order("expense_date", { ascending: false })
+    .order("created_at", { ascending: false });
+
+  const activeCrops = cropsError
+    ? null
+    : crops?.filter((crop) => ["planned", "growing", "ready"].includes(crop.status)).length ?? 0;
+  const totalExpenses = expensesError
+    ? null
+    : expenses?.reduce((total, expense) => total + Number(expense.amount), 0) ?? 0;
+  const currentDate = new Date();
+  const currentMonth = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, "0")}`;
+  const monthlyExpenses = expensesError
+    ? null
+    : expenses?.reduce(
+        (total, expense) => expense.expense_date.startsWith(currentMonth)
+          ? total + Number(expense.amount)
+          : total,
+        0,
+      ) ?? 0;
 
   const fullName = profile?.full_name?.trim() || user.user_metadata?.full_name || "Farmer";
   const farmName = profile?.farm_name?.trim() || "My Farm";
@@ -66,6 +94,8 @@ export default async function DashboardPage() {
           <nav aria-label="Dashboard navigation" className="flex flex-wrap items-center gap-4">
             <Link href="/dashboard" className="text-link text-sm">Dashboard</Link>
             <Link href="/dashboard/crops" className="text-link text-sm">Crops</Link>
+            <Link href="/dashboard/expenses" className="text-link text-sm">Expenses</Link>
+            <Link href="/dashboard/notebook" className="text-link text-sm">Notebook</Link>
             <Link href="/dashboard/settings" className="text-link text-sm">Settings</Link>
             <LogoutButton />
           </nav>
@@ -82,6 +112,7 @@ export default async function DashboardPage() {
             <p style={{ marginTop: 10, color: "rgba(28, 42, 35, 0.68)" }}>
               Here&apos;s what&apos;s happening on your farm today.
             </p>
+            {profile?.farm_location && <p style={{ marginTop: 6, color: "rgba(28, 42, 35, 0.68)" }}>{profile.farm_location}</p>}
           </div>
           <FarmImage
             src="/healthy-farm.jpg"
@@ -100,7 +131,8 @@ export default async function DashboardPage() {
         <section className="dashboard-stats" style={{ marginTop: 24 }}>
           <article className="stat-card">
             <span className="eyebrow" style={{ marginBottom: 0, fontSize: "0.7rem" }}>Active Crops</span>
-            <strong>{activeCrops}</strong>
+            <strong>{activeCrops ?? "—"}</strong>
+            {cropsError && <span style={{ color: "rgba(28, 42, 35, 0.7)" }}>Unable to load crop total</span>}
           </article>
 
           <article className="stat-card">
@@ -111,15 +143,54 @@ export default async function DashboardPage() {
 
           <article className="stat-card">
             <span className="eyebrow" style={{ marginBottom: 0, fontSize: "0.7rem" }}>Expenses</span>
-            <strong>Not available</strong>
-            <span style={{ color: "rgba(28, 42, 35, 0.7)" }}>Expense tracking is coming next</span>
+            <strong>{totalExpenses === null ? "—" : formatMoney(totalExpenses)}</strong>
+            <span style={{ color: "rgba(28, 42, 35, 0.7)" }}>
+              {expensesError ? "Unable to load expenses" : `${expenses?.length ?? 0} recorded`}
+            </span>
           </article>
 
           <article className="stat-card">
             <span className="eyebrow" style={{ marginBottom: 0, fontSize: "0.7rem" }}>Revenue</span>
-            <strong>Not available</strong>
-            <span style={{ color: "rgba(28, 42, 35, 0.7)" }}>Harvest and revenue tracking are coming next</span>
+            <strong>Not tracked</strong>
+            <span style={{ color: "rgba(28, 42, 35, 0.7)" }}>Harvest revenue is not recorded here</span>
           </article>
+          <article className="stat-card">
+            <span className="eyebrow" style={{ marginBottom: 0, fontSize: "0.7rem" }}>This month</span>
+            <strong>{monthlyExpenses === null ? "—" : formatMoney(monthlyExpenses)}</strong>
+            <span style={{ color: "rgba(28, 42, 35, 0.7)" }}>Farm expenses</span>
+          </article>
+        </section>
+
+        <section className="dashboard-card" style={{ marginTop: 24 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
+            <div>
+              <p className="eyebrow" style={{ marginBottom: 0 }}>Expense overview</p>
+              <h2 style={{ fontSize: "1.7rem", color: "var(--farm-green-deep)" }}>Recent expenses</h2>
+            </div>
+            <Link href="/dashboard/expenses" className="text-link text-sm">View all</Link>
+          </div>
+          {expensesError ? (
+            <p className="form-message error" role="alert" style={{ marginTop: 18 }}>We couldn&apos;t load your expenses right now.</p>
+          ) : expenses?.length ? (
+            <div style={{ marginTop: 18, display: "grid", gap: 12 }}>
+              {expenses.slice(0, 5).map((expense) => (
+                <div key={expense.id} className="task-item">
+                  <div>
+                    <strong>{expense.category}</strong>
+                    {expense.description && <p style={{ color: "rgba(28, 42, 35, 0.7)" }}>{expense.description}</p>}
+                    <span style={{ color: "rgba(28, 42, 35, 0.7)", fontSize: "0.9rem" }}>{expense.expense_date}</span>
+                  </div>
+                  <strong>{formatMoney(Number(expense.amount))}</strong>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="empty-state" style={{ marginTop: 18 }}>
+              <h3>No expenses recorded yet</h3>
+              <p style={{ color: "rgba(28, 42, 35, 0.7)" }}>Record your first farm expense to see it here.</p>
+              <Link href="/dashboard/expenses" className="button button-primary" style={{ marginTop: 8 }}>Add an expense</Link>
+            </div>
+          )}
         </section>
 
         <section className="dashboard-card" style={{ marginTop: 24 }}>
@@ -178,7 +249,7 @@ export default async function DashboardPage() {
             </div>
           </Link>
 
-          <div className="dashboard-card dashboard-action-card">
+          <Link href="/dashboard/expenses" className="dashboard-card dashboard-action-card">
             <FarmImage
 
             
@@ -190,15 +261,22 @@ export default async function DashboardPage() {
             />
             <div className="dashboard-action-copy">
               <h3 style={{ color: "var(--farm-green-deep)", fontSize: "1.5rem" }}>Track Expenses</h3>
-              <p style={{ marginTop: 8, color: "rgba(28, 42, 35, 0.72)" }}>Supporting expense tracking is coming soon.</p>
+              <p style={{ marginTop: 8, color: "rgba(28, 42, 35, 0.72)" }}>Record spending and connect costs to your crops.</p>
             </div>
-          </div>
+          </Link>
 
           <Link href="/dashboard/settings" className="dashboard-card dashboard-action-card dashboard-action-card-plain">
             <div className="dashboard-action-copy">
               <div style={{ fontSize: "2.2rem" }}>⚙️</div>
               <h3 style={{ marginTop: 12, color: "var(--farm-green-deep)", fontSize: "1.5rem" }}>Farm Settings</h3>
               <p style={{ marginTop: 8, color: "rgba(28, 42, 35, 0.72)" }}>Update farmer and farm information with ease.</p>
+            </div>
+          </Link>
+
+          <Link href="/dashboard/notebook" className="dashboard-card dashboard-action-card dashboard-action-card-plain">
+            <div className="dashboard-action-copy">
+              <h3 style={{ color: "var(--farm-green-deep)", fontSize: "1.5rem" }}>Farm Notebook</h3>
+              <p style={{ marginTop: 8, color: "rgba(28, 42, 35, 0.72)" }}>Keep a short list of tasks for your farm.</p>
             </div>
           </Link>
         </section>

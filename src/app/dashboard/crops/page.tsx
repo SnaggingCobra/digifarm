@@ -47,6 +47,7 @@ export default function CropsPage() {
   const supabase = useMemo(() => createClient(), []);
   const [crops, setCrops] = useState<CropRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -56,6 +57,7 @@ export default function CropsPage() {
   const loadCrops = useCallback(async () => {
     try {
       setLoading(true);
+      setLoadFailed(false);
       setError("");
       const { data, error: cropsError } = await supabase
         .from("crops")
@@ -66,6 +68,7 @@ export default function CropsPage() {
       setCrops(data ?? []);
     } catch (loadError) {
       console.error("Failed to load crops", loadError);
+      setLoadFailed(true);
       setError("We couldn't load your crops. Please try again.");
     } finally {
       setLoading(false);
@@ -170,7 +173,6 @@ export default function CropsPage() {
 
     setError("");
     setSuccess("");
-
     try {
       const { error: deleteError } = await supabase.from("crops").delete().eq("id", crop.id);
       if (deleteError) throw deleteError;
@@ -204,6 +206,8 @@ export default function CropsPage() {
           <Brand />
           <nav aria-label="Farm navigation" className="flex flex-wrap items-center gap-4">
             <Link href="/dashboard" className="text-link text-sm">Dashboard</Link>
+            <Link href="/dashboard/expenses" className="text-link text-sm">Expenses</Link>
+            <Link href="/dashboard/notebook" className="text-link text-sm">Notebook</Link>
             <Link href="/dashboard/settings" className="text-link text-sm">Settings</Link>
             <LogoutButton />
           </nav>
@@ -294,6 +298,10 @@ export default function CropsPage() {
 
             {loading ? (
               <p className="form-message success" style={{ marginTop: 18 }}>Loading your crop records...</p>
+            ) : loadFailed ? (
+              <button type="button" className="button button-secondary" style={{ marginTop: 18 }} onClick={() => void loadCrops()}>
+                Retry loading crops
+              </button>
             ) : crops.length === 0 ? (
               <div className="empty-state" style={{ marginTop: 18 }}>
                 <FarmImage
@@ -315,6 +323,8 @@ export default function CropsPage() {
                       sizes="88px"
                       className="crop-record-photo"
                     />
+
+
                     <div style={{ flex: 1 }}>
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
                         <strong>{crop.name}</strong>

@@ -8,7 +8,7 @@ export async function updateSession(request: NextRequest) {
   const guestOnlyRoute = pathname === "/login" || pathname === "/signup" || pathname === "/register";
   const signInPath = `/login?next=${encodeURIComponent(safeRedirect(pathname))}`;
   if (!getSupabaseConfig()) {
-    return protectedRoute ? localRedirect(`${signInPath}&notice=configuration`) : NextResponse.next({ request });
+    return protectedRoute ? localRedirect(`${signInPath}&notice=configuration`, request.url) : NextResponse.next({ request });
   }
   const { supabase, applyCookies } = createResponseClient(request);
   try {
@@ -16,11 +16,11 @@ export async function updateSession(request: NextRequest) {
     const authenticated = Boolean(data?.claims?.sub);
     if (protectedRoute && (error || !authenticated)) {
       const unavailable = error && (error.status === 0 || (error.status ?? 0) >= 500);
-      return applyCookies(localRedirect(`${signInPath}&notice=${unavailable ? "unavailable" : "session"}`));
+      return applyCookies(localRedirect(`${signInPath}&notice=${unavailable ? "unavailable" : "session"}`, request.url));
     }
-    if (guestOnlyRoute && authenticated) return applyCookies(localRedirect("/dashboard"));
+    if (guestOnlyRoute && authenticated) return applyCookies(localRedirect("/dashboard", request.url));
     return applyCookies(NextResponse.next({ request }));
   } catch {
-    return applyCookies(protectedRoute ? localRedirect(`${signInPath}&notice=unavailable`) : NextResponse.next({ request }));
+    return applyCookies(protectedRoute ? localRedirect(`${signInPath}&notice=unavailable`, request.url) : NextResponse.next({ request }));
   }
 }
