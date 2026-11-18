@@ -138,7 +138,14 @@ export function FarmNotebook({
         return false;
       }
 
-      const data = change(current.user.user_metadata);
+      const existingMetadata = (
+        current.user.user_metadata ?? {}
+      ) as Record<string, unknown>;
+
+      const data = {
+        ...existingMetadata,
+        ...change(existingMetadata),
+      };
 
       const { data: updated, error: updateError } =
         await supabase.auth.updateUser({
