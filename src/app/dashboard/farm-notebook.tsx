@@ -12,6 +12,7 @@ import {
 } from "@/utils/supabase/farm";
 import { FarmerFields } from "@/components/auth/farm-fields";
 import { Icon } from "@/components/icon";
+import { Autour_One } from "next/font/google";
 
 type FarmProfile = {
   id: string;
@@ -464,6 +465,7 @@ export function FarmNotebook({
             </ul>
           )}
         </section>
+
 
         <section
           className="dashboard-card min-w-0"
