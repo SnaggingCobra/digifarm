@@ -1,6 +1,6 @@
 # DigiFarm
 
-DigiFarm is a farm management application built with Next.js, React, TypeScript, and Supabase. Farmers can manage their farm profile, crop records, farm expenses, and a short farm-task notebook. Each farmer's private records are protected by Supabase Row Level Security.
+DigiFarm is a farm management application built with Next.js, React, TypeScript, and Supabase. Farmers can manage their farm profile, crop records, farm expenses, harvest quantities, sales revenue, and a short farm-task notebook. Each farmer's private records are protected by Supabase Row Level Security.
 
 ## Requirements
 
@@ -27,7 +27,7 @@ npm run dev
 
 ## Database
 
-Apply the migrations in `supabase/migrations/` to the linked Supabase project in timestamp order. Do not reset a project containing farmer data. The migrations create farmer profiles, crops, and expenses, with owner-scoped RLS policies.
+Apply every migration in `supabase/migrations/` to the linked Supabase project in timestamp order. Do not reset a project containing farmer data. The migrations create farmer profiles, crops, expenses, harvests, and sales with owner-scoped RLS policies. The latest migrations cascade deletes to related farm records and add a per-user farm-record reset action in Settings; the reset preserves the user's login and profile.
 
 Authentication email confirmation and password recovery require the Supabase Auth email settings and redirect URLs to include the local application origin.
 
@@ -44,4 +44,4 @@ The focused utility tests can be run with a Node.js version that supports TypeSc
 node --experimental-strip-types --test src/utils/supabase/auth.test.mjs
 ```
 
-The current application does not yet record harvest quantities or revenue; those values are not presented as live farm statistics.
+Harvest quantities and sales revenue are managed on the Harvests page.

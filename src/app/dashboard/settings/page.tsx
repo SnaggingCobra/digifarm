@@ -28,6 +28,7 @@ export default function SettingsPage() {
   const [form, setForm] = useState<ProfileForm>(defaultForm);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [resettingRecords, setResettingRecords] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
@@ -126,6 +127,39 @@ export default function SettingsPage() {
     }
   }
 
+  async function handleResetFarmRecords() {
+    const confirmed = window.confirm(
+      "Permanently delete all your crops, expenses, harvests, and sales? Your login and farm profile will remain. This cannot be undone.",
+    );
+    if (!confirmed || resettingRecords) return;
+
+    setError("");
+    setSuccess("");
+    setResettingRecords(true);
+
+    try {
+      const { data: authData, error: authError } = await supabase.auth.getUser();
+      if (authError) throw authError;
+      if (!authData.user) throw new Error("Please sign in again.");
+
+      const { error: resetError } = await supabase.rpc("reset_farm_records");
+      if (resetError) throw resetError;
+
+      setSuccess(
+        "Your crops, expenses, harvests, and sales were deleted. Your login and farm profile are unchanged.",
+      );
+    } catch (resetError) {
+      console.error("Failed to reset farm records", resetError);
+      setError(
+        resetError instanceof Error
+          ? `We couldn't reset your farm records. ${resetError.message}`
+          : "We couldn't reset your farm records. Please try again.",
+      );
+    } finally {
+      setResettingRecords(false);
+    }
+  }
+
   return (
     <div className="page-shell">
       <header className="site-header">
@@ -191,6 +225,33 @@ export default function SettingsPage() {
               {saving ? "Saving changes..." : "Save changes"}
             </button>
           </form>
+        </section>
+
+        <section
+          className="dashboard-card"
+          aria-labelledby="reset-farm-records"
+          style={{ marginTop: 20, maxWidth: 760 }}
+        >
+          <p className="eyebrow">Danger zone</p>
+          <h2
+            id="reset-farm-records"
+            style={{ color: "var(--farm-error)", fontSize: "1.5rem" }}
+          >
+            Reset farm records
+          </h2>
+          <p style={{ marginTop: 8, color: "rgba(28, 42, 35, 0.72)" }}>
+            Permanently remove all your crops, expenses, harvests, and sales.
+            Your login and farm profile will not be deleted.
+          </p>
+          <button
+            type="button"
+            className="button"
+            style={{ marginTop: 16, background: "rgba(182,70,46,0.08)", color: "var(--farm-error)" }}
+            onClick={() => void handleResetFarmRecords()}
+            disabled={resettingRecords || saving}
+          >
+            {resettingRecords ? "Deleting farm records..." : "Delete all farm records"}
+          </button>
         </section>
       </main>
     </div>

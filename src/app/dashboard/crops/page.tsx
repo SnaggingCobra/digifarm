@@ -187,7 +187,9 @@ export default function CropsPage() {
   }
 
   async function handleDelete(crop: CropRecord) {
-    const confirmed = window.confirm(`Delete ${crop.name}? This action cannot be undone.`);
+    const confirmed = window.confirm(
+      `Delete ${crop.name} and its linked expenses, harvests, and sales? This cannot be undone.`,
+    );
     if (!confirmed) return;
 
     setError("");
@@ -200,7 +202,11 @@ export default function CropsPage() {
       await loadCrops();
     } catch (deleteError) {
       console.error("Failed to delete crop", deleteError);
-      setError("We couldn't delete that crop. Please try again.");
+      setError(
+        deleteError instanceof Error
+          ? `We couldn't delete that crop. ${deleteError.message}`
+          : "We couldn't delete that crop. Please try again.",
+      );
     }
   }
 
