@@ -4,6 +4,7 @@ import { Brand } from "@/components/brand";
 import { LogoutButton } from "@/components/auth/logout-button";
 import { FarmImage } from "@/components/farm-image";
 import { createClient, getVerifiedUser } from "@/utils/supabase/server";
+import { getSupabaseErrorMessage } from "@/utils/supabase/errors";
 
 function getGreeting(fullName: string) {
   const hour = new Date().getHours();
@@ -57,12 +58,34 @@ export default async function DashboardPage() {
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
 
-  const { data: expenses, error: expensesError } = await supabase
-    .from("expenses")
-    .select("id, category, description, amount, expense_date")
-    .eq("user_id", user.id)
-    .order("expense_date", { ascending: false })
-    .order("created_at", { ascending: false });
+  const [
+    { data: expenses, error: expensesError },
+    { data: harvests, error: harvestsError },
+  ] = await Promise.all([
+    supabase
+      .from("expenses")
+      .select(
+        "id, user_id, crop_id, category, description, amount, expense_date, notes, created_at",
+      )
+      .eq("user_id", user.id)
+      .order("expense_date", { ascending: false })
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("harvests")
+      .select("crop_id")
+      .eq("user_id", user.id),
+  ]);
+
+  if (harvestsError) {
+    console.warn("Could not load harvests for dashboard crop status:", {
+      code: harvestsError.code,
+      message: harvestsError.message,
+    });
+  }
+
+  const harvestedCropIds = new Set(
+    (harvests ?? []).map((harvest) => harvest.crop_id),
+  );
 
   const activeCrops = cropsError
     ? null
@@ -95,6 +118,7 @@ export default async function DashboardPage() {
             <Link href="/dashboard" className="text-link text-sm">Dashboard</Link>
             <Link href="/dashboard/crops" className="text-link text-sm">Crops</Link>
             <Link href="/dashboard/expenses" className="text-link text-sm">Expenses</Link>
+            <Link href="/dashboard/harvests" className="text-link text-sm">Harvests</Link>
             <Link href="/dashboard/notebook" className="text-link text-sm">Notebook</Link>
             <Link href="/dashboard/settings" className="text-link text-sm">Settings</Link>
             <LogoutButton />
@@ -151,8 +175,8 @@ export default async function DashboardPage() {
 
           <article className="stat-card">
             <span className="eyebrow" style={{ marginBottom: 0, fontSize: "0.7rem" }}>Revenue</span>
-            <strong>Not tracked</strong>
-            <span style={{ color: "rgba(28, 42, 35, 0.7)" }}>Harvest revenue is not recorded here</span>
+            <strong>Track your sales</strong>
+            <Link href="/dashboard/harvests" className="text-link text-sm">Open harvests →</Link>
           </article>
           <article className="stat-card">
             <span className="eyebrow" style={{ marginBottom: 0, fontSize: "0.7rem" }}>This month</span>
@@ -170,7 +194,10 @@ export default async function DashboardPage() {
             <Link href="/dashboard/expenses" className="text-link text-sm">View all</Link>
           </div>
           {expensesError ? (
-            <p className="form-message error" role="alert" style={{ marginTop: 18 }}>We couldn&apos;t load your expenses right now.</p>
+            <p className="form-message error" role="alert" style={{ marginTop: 18 }}>
+              We couldn&apos;t load your expenses.{" "}
+              {getSupabaseErrorMessage(expensesError) ?? "Please try again."}
+            </p>
           ) : expenses?.length ? (
             <div style={{ marginTop: 18, display: "grid", gap: 12 }}>
               {expenses.slice(0, 5).map((expense) => (
@@ -214,7 +241,11 @@ export default async function DashboardPage() {
                     <div style={{ fontWeight: 700 }}>{crop.name}</div>
                     {crop.variety ? <div style={{ color: "rgba(28, 42, 35, 0.7)" }}>{crop.variety}</div> : null}
                   </div>
-                  <span className="tag" style={{ textTransform: "capitalize" }}>{crop.status}</span>
+                  <span className="tag" style={{ textTransform: "capitalize" }}>
+                    {harvestedCropIds.has(crop.id) && crop.status !== "completed"
+                      ? "harvested"
+                      : crop.status}
+                  </span>
                 </div>
               ))}
             </div>
@@ -262,6 +293,14 @@ export default async function DashboardPage() {
             <div className="dashboard-action-copy">
               <h3 style={{ color: "var(--farm-green-deep)", fontSize: "1.5rem" }}>Track Expenses</h3>
               <p style={{ marginTop: 8, color: "rgba(28, 42, 35, 0.72)" }}>Record spending and connect costs to your crops.</p>
+            </div>
+          </Link>
+
+          <Link href="/dashboard/harvests" className="dashboard-card dashboard-action-card dashboard-action-card-plain">
+            <div className="dashboard-action-copy">
+              <div style={{ fontSize: "2.2rem" }}>🌾</div>
+              <h3 style={{ marginTop: 12, color: "var(--farm-green-deep)", fontSize: "1.5rem" }}>Manage Harvests</h3>
+              <p style={{ marginTop: 8, color: "rgba(28, 42, 35, 0.72)" }}>Record harvests, track remaining stock, and manage sales.</p>
             </div>
           </Link>
 

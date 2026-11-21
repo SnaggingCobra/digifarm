@@ -27,6 +27,7 @@ export default async function FarmNotebookPage() {
             <Link href="/dashboard" className="text-link text-sm">Dashboard</Link>
             <Link href="/dashboard/crops" className="text-link text-sm">Crops</Link>
             <Link href="/dashboard/expenses" className="text-link text-sm">Expenses</Link>
+            <Link href="/dashboard/harvests" className="text-link text-sm">Harvests</Link>
             <Link href="/dashboard/notebook" className="text-link text-sm">Notebook</Link>
             <Link href="/dashboard/settings" className="text-link text-sm">Settings</Link>
             <LogoutButton />

@@ -59,13 +59,32 @@ export default function CropsPage() {
       setLoading(true);
       setLoadFailed(false);
       setError("");
-      const { data, error: cropsError } = await supabase
-        .from("crops")
-        .select("id, user_id, name, variety, status, planting_date, expected_harvest_date, notes, created_at, updated_at")
-        .order("created_at", { ascending: false });
+      const [
+        { data, error: cropsError },
+        { data: harvests, error: harvestsError },
+      ] = await Promise.all([
+        supabase
+          .from("crops")
+          .select("id, user_id, name, variety, status, planting_date, expected_harvest_date, notes, created_at, updated_at")
+          .order("created_at", { ascending: false }),
+        supabase.from("harvests").select("crop_id"),
+      ]);
 
       if (cropsError) throw cropsError;
-      setCrops(data ?? []);
+      if (harvestsError) throw harvestsError;
+
+      const harvestedCropIds = new Set(
+        (harvests ?? []).map((harvest) => harvest.crop_id),
+      );
+      setCrops(
+        (data ?? []).map((crop) => ({
+          ...crop,
+          status:
+            harvestedCropIds.has(crop.id) && crop.status !== "completed"
+              ? "harvested"
+              : crop.status,
+        })),
+      );
     } catch (loadError) {
       console.error("Failed to load crops", loadError);
       setLoadFailed(true);
@@ -207,6 +226,7 @@ export default function CropsPage() {
           <nav aria-label="Farm navigation" className="flex flex-wrap items-center gap-4">
             <Link href="/dashboard" className="text-link text-sm">Dashboard</Link>
             <Link href="/dashboard/expenses" className="text-link text-sm">Expenses</Link>
+            <Link href="/dashboard/harvests" className="text-link text-sm">Harvests</Link>
             <Link href="/dashboard/notebook" className="text-link text-sm">Notebook</Link>
             <Link href="/dashboard/settings" className="text-link text-sm">Settings</Link>
             <LogoutButton />

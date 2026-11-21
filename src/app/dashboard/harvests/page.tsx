@@ -5,8 +5,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Brand } from "@/components/brand";
 import { LogoutButton } from "@/components/auth/logout-button";
 import { createClient } from "@/utils/supabase/client";
-import { GSP_NO_RETURNED_VALUE } from "next/dist/lib/constants";
-
 const units = [ 
     "kg",
     "quintal",
@@ -326,6 +324,21 @@ export default function HarvestsPage() {
       return;
     }
 
+    if (editingHarvestId) {
+      const currentHarvest = harvests.find(
+        (harvest) => harvest.id === editingHarvestId,
+      );
+      if (currentHarvest) {
+        const { soldQuantity } = getHarvestTotals(currentHarvest);
+        if (quantity < soldQuantity) {
+          setError(
+            `Harvest quantity cannot be less than the ${soldQuantity} ${currentHarvest.unit} already sold.`,
+          );
+          return;
+        }
+      }
+    }
+
     if (
       !/^\d{4}-\d{2}-\d{2}$/.test(harvestForm.harvest_date) ||
       Number.isNaN(Date.parse(harvestForm.harvest_date))
@@ -378,7 +391,11 @@ export default function HarvestsPage() {
       await loadData();
     } catch (saveError) {
       console.error("Failed to save harvest:", saveError);
-      setError("We couldn't save the harvest. Please try again.");
+      setError(
+        saveError instanceof Error
+          ? `We couldn't save the harvest: ${saveError.message}`
+          : "We couldn't save the harvest. Please try again.",
+      );
     } finally {
       setSaving(false);
     }
@@ -423,8 +440,8 @@ export default function HarvestsPage() {
       return;
     }
 
-    if (!Number.isFinite(unitPrice) || unitPrice < 0) {
-      setError("Enter a valid selling price.");
+    if (!Number.isFinite(unitPrice) || unitPrice <= 0) {
+      setError("Enter a selling price greater than zero.");
       return;
     }
 
@@ -502,13 +519,12 @@ export default function HarvestsPage() {
     setError("");
     setSuccess("");
 
-    window.scrollTo({ top: 0, behaviour: "smooth"});
+    window.scrollTo({ top: 0, behavior: "smooth"});
   }
 
   async function deleteHarvest(harvest: HarvestRecord) {
     const confirmed = window.confirm(
-      'Delete this Harvest of ${harvest.quantity} ${harvest.unit}? this cannot be undone',
-
+      `Delete this harvest of ${harvest.quantity} ${harvest.unit}? This cannot be undone.`,
     );
 
     if(!confirmed) return;
@@ -524,7 +540,7 @@ export default function HarvestsPage() {
       if (!authData.user) throw new Error("Please sign in again");
 
       const { error: deleteError } = await supabase
-      .from("harvest")
+      .from("harvests")
       .delete()
       .eq("id", harvest.id)
       .eq("user_id", authData.user.id);
@@ -543,8 +559,8 @@ export default function HarvestsPage() {
     } catch (deleteError) {
       console.error("failed to delete harvest: ", deleteError );
 
-      setError("we coudnt delete this harvest . it may have exisitng sales liked to it",
-
+      setError(
+        "We couldn't delete this harvest. It may have existing sales linked to it.",
       );
     }
   }
@@ -580,7 +596,7 @@ export default function HarvestsPage() {
 
     } catch (deleteError) {
       console.error("failed to delete sale", deleteError);
-      setError("we coudnt delete this sale transaction");
+      setError("We couldn't delete this sale transaction.");
       
     }
     
@@ -711,10 +727,457 @@ export default function HarvestsPage() {
                     />
                   </label>
 
-                  
+                    <label className="field">
+                      <span>Quantity</span>
+                      <input type="number"
+                      min="0.01"
+                      step="0.01"
+                      placeholder="eg. 100"
+                      value={harvestForm.quantity}
+                      onChange={(event) =>
+                        updateHarvestField("quantity", event.target.value)
+                      }
+                      required
+                      />
+                    </label>
+
+                    <label className="field">
+                    <span>Unit</span>
+                    <select
+                      value={harvestForm.unit}
+                      onChange={(event) =>
+                        updateHarvestField(
+                          "unit",
+                          event.target.value as HarvestUnit,
+                        )
+                      }
+                    >
+                      {units.map((unit) => (
+                        <option key={unit} value={unit}>
+                          {unit.charAt(0).toUpperCase() + unit.slice(1)}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="field">
+                    <span>Notes (Optional)</span>
+                    <textarea
+                      rows={3}
+                      placeholder="Harvest quality, field details, etc."
+                      value={harvestForm.notes}
+                      onChange={(event) =>
+                        updateHarvestField("notes", event.target.value)
+                      }
+                    />
+                  </label>
                 </div>
+
+                <div className="form-actions">
+                  <button
+                    type="submit"
+                    className="button button-primary"
+                    disabled={saving || crops.length === 0}
+                  >
+                    {saving
+                      ? "Saving..."
+                      : editingHarvestId
+                        ? "Update Harvest"
+                        : "Save Harvest"}
+                  </button>
+
+                  {editingHarvestId && (
+                    <button
+                      type="button"
+                      className="button"
+                      onClick={cancelHarvestEditing}
+                      disabled={saving}
+                    >
+                      Cancel
+                    </button>
+                  )}
+                </div>
+
+                {crops.length === 0 && (
+                  <p className="empty-state">
+                    You need to add a crop before recording a harvest.{" "}
+                    <Link href="/dashboard/crops">Add a crop</Link>
+                  </p>
+                )}
+                  
               </form>
             </section>
+
+                            <section className="dashboard-card">
+              <div className="section-heading">
+                <div>
+                  <p className="eyebrow">SALES RECORD</p>
+                  <h2>Record a Sale</h2>
+                  <p className="page-description">
+                    Record how much you sold, the price, and who bought it.
+                  </p>
+                </div>
+              </div>
+
+              <form className="auth-form" onSubmit={handleSaleSubmit}>
+                <div className="form-grid">
+                  <label className="field">
+                    <span>Harvest</span>
+                    <select
+                      value={saleForm.harvest_id}
+                      onChange={(event) =>
+                        updateSaleField("harvest_id", event.target.value)
+                      }
+                      required
+                    >
+                      <option value="">Select a harvest</option>
+                      {harvests
+                        .filter(
+                          (harvest) =>
+                            getHarvestTotals(harvest).remainingQuantity > 0,
+                        )
+                        .map((harvest) => {
+                          const crop = crops.find(
+                            (item) => item.id === harvest.crop_id,
+                          );
+                          const remaining =
+                            getHarvestTotals(harvest).remainingQuantity;
+
+                          return (
+                            <option key={harvest.id} value={harvest.id}>
+                              {crop?.name ?? "Unknown crop"} — {remaining}{" "}
+                              {harvest.unit} remaining (
+                              {formatDate(harvest.harvest_date)})
+                            </option>
+                          );
+                        })}
+                    </select>
+                  </label>
+
+                  <label className="field">
+                    <span>Sale Date</span>
+                    <input
+                      type="date"
+                      value={saleForm.sale_date}
+                      onChange={(event) =>
+                        updateSaleField("sale_date", event.target.value)
+                      }
+                      required
+                    />
+                  </label>
+
+                  <label className="field">
+                    <span>Quantity Sold</span>
+                    <input
+                      type="number"
+                      min="0.01"
+                      step="0.01"
+                      placeholder="e.g. 30"
+                      value={saleForm.quantity}
+                      onChange={(event) =>
+                        updateSaleField("quantity", event.target.value)
+                      }
+                      required
+                    />
+                  </label>
+
+                  <label className="field">
+                    <span>Price per Unit (Rs.)</span>
+                    <input
+                      type="number"
+                      min="0.01"
+                      step="0.01"
+                      placeholder="e.g. 80"
+                      value={saleForm.unit_price}
+                      onChange={(event) =>
+                        updateSaleField("unit_price", event.target.value)
+                      }
+                      required
+                    />
+                  </label>
+
+                  <label className="field">
+                    <span>Buyer (Optional)</span>
+                    <input
+                      type="text"
+                      placeholder="e.g. Local market"
+                      value={saleForm.buyer}
+                      onChange={(event) =>
+                        updateSaleField("buyer", event.target.value)
+                      }
+                    />
+                  </label>
+
+                  <label className="field">
+                    <span>Notes (Optional)</span>
+                    <textarea
+                      rows={3}
+                      placeholder="Payment details, quality, etc."
+                      value={saleForm.notes}
+                      onChange={(event) =>
+                        updateSaleField("notes", event.target.value)
+                      }
+                    />
+                  </label>
+                </div>
+
+                <div className="form-actions">
+                  <button
+                    type="submit"
+                    className="button button-primary"
+                    disabled={saving || harvests.length === 0}
+                  >
+                    {saving ? "Saving..." : "Save Sale"}
+                  </button>
+                </div>
+
+                {harvests.length === 0 && (
+                  <p className="empty-state">
+                    Record a harvest before adding a sale.
+                  </p>
+                )}
+              </form>
+            </section>
+
+            <section className="dashboard-card">
+              <div className="sectio-heading">
+                <div>
+                  <p className="eyebrow"> Your Farm Records</p>
+                  <h2> Harvest History</h2>
+                  <p className="page-description">
+                    View and Manage all your recorded harvest
+                  </p>
+                </div>
+
+                <span className="tag">{harvests.length} records</span>
+
+              </div>
+
+              <div className="field">
+                <label htmlFor="harvest-search">Search Harvest</label>
+                <input id="harvest-search" type="search" placeholder="Search by crop variety or notes"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                />
+                {filteredHarvests.length === 0 ? (
+                <div className="empty-state">
+                  {harvests.length === 0
+                    ? "No harvests recorded yet. Add your first harvest above."
+                    : "No harvests match your search."}
+                </div>
+              ) : (
+                <div className="task-list">
+                  {filteredHarvests.map((harvest) => {
+                    const crop = crops.find(
+                      (item) => item.id === harvest.crop_id,
+                    );
+                    const totals = getHarvestTotals(harvest);
+
+                    return (
+                      <article className="task-item" key={harvest.id}>
+                        <div className="task-content">
+                          <div className="task-heading">
+                            <h3>{crop?.name ?? "Unknown crop"}</h3>
+                            <span className="tag">
+                              {formatDate(harvest.harvest_date)}
+                            </span>
+                          </div>
+
+                          {crop?.variety && (
+                            <p className="stat-description">
+                              Variety: {crop.variety}
+                            </p>
+                          )}
+
+                          <div className="dashboard-stats">
+                            <div className="stat-card">
+                              <span className="stat-label">Harvested</span>
+                              <strong className="stat-value">
+                                {Number(harvest.quantity).toLocaleString(
+                                  "en-NP",
+                                )}{" "}
+                                {harvest.unit}
+                              </strong>
+                            </div>
+
+                            <div className="stat-card">
+                              <span className="stat-label">Sold</span>
+                              <strong className="stat-value">
+                                {totals.soldQuantity.toLocaleString("en-NP")}{" "}
+                                {harvest.unit}
+                              </strong>
+                            </div>
+
+                            <div className="stat-card">
+                              <span className="stat-label">Remaining</span>
+                              <strong className="stat-value">
+                                {totals.remainingQuantity.toLocaleString(
+                                  "en-NP",
+                                )}{" "}
+                                {harvest.unit}
+                              </strong>
+                            </div>
+
+                            <div className="stat-card">
+                              <span className="stat-label">Revenue</span>
+                              <strong className="stat-value">
+                                {formatMoney(totals.revenue)}
+                              </strong>
+                            </div>
+                          </div>
+
+                          <p className="stat-description">
+                            {totals.salesCount} sale transaction
+                            {totals.salesCount === 1 ? "" : "s"}
+                          </p>
+
+                          {harvest.notes && (
+                            <p className="page-description">
+                              {harvest.notes}
+                            </p>
+                          )}
+
+                          <div className="form-actions">
+                            <button
+                              type="button"
+                              className="button button-primary"
+                              onClick={() => {
+                                setSaleForm((current) => ({
+                                  ...current,
+                                  harvest_id: harvest.id,
+                                }));
+                                window.scrollTo({
+                                  top: 0,
+                                  behavior: "smooth",
+                                });
+                              }}
+                              disabled={totals.remainingQuantity <= 0}
+                            >
+                              Record Sale
+                            </button>
+
+                            <button
+                              type="button"
+                              className="button"
+                              onClick={() => startEditingHarvest(harvest)}
+                            >
+                              Edit
+                            </button>
+
+                            <button
+                              type="button"
+                              className="button"
+                              onClick={() => deleteHarvest(harvest)}
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+              )}
+              </div>
+            </section>
+
+            <section className="dashboard-card">
+              <div className="section-heading">
+                <div>
+                  <p className="eyebrow">Revenue Records</p>
+                  <h2>Sales History</h2>
+                  <p className="page-description">
+                    Review every sale and the money earned
+                  </p>
+                </div>
+                <span className="tag">{sales.length} transactions</span>
+              </div>
+
+              {sales.length === 0 ? (
+                <div className="empty-state">
+                  No sales recorded yet. Record your First sale above
+                </div>
+              ) : (
+                <div  className="task-list">
+                  {sales.map((sale) => {
+                    const harvest = harvests.find(
+                      (item) => item.id === sale.harvest_id,
+                    );
+                  const crop = crops.find(
+                      (item) => item.id === harvest?.crop_id,
+                    );
+
+                    const saleRevenue =
+                      Number(sale.quantity) * Number(sale.unit_price);
+
+                    return (
+                      <article className="task-item" key={sale.id}>
+                        <div className="task-content">
+                          <div className="task-heading">
+                            <h3>{crop?.name ?? "Unknown crop"}</h3>
+                            <span className="tag">
+                              {formatDate(sale.sale_date)}
+                            </span>
+                          </div>
+
+                          <p className="stat-description">
+                            Harvest date:{" "}
+                            {harvest
+                              ? formatDate(harvest.harvest_date)
+                              : "Unknown"}
+                          </p>
+
+                          <div className="dashboard-stats">
+                            <div className="stat-card">
+                              <span className="stat-label">Quantity Sold</span>
+                              <strong className="stat-value">
+                                {Number(sale.quantity).toLocaleString(
+                                  "en-NP",
+                                )}{" "}
+                                {harvest?.unit ?? ""}
+                              </strong>
+                            </div>
+
+                            <div className="stat-card">
+                              <span className="stat-label">Price Per Unit</span>
+                              <strong className="stat-value">
+                                {formatMoney(Number(sale.unit_price))}
+                              </strong>
+                            </div>
+
+                            <div className="stat-card">
+                              <span className="stat-label">Total Revenue</span>
+                              <strong className="stat-value">
+                                {formatMoney(saleRevenue)}
+                              </strong>
+                            </div>
+                          </div>
+
+                          <p className="stat-description">
+                            Buyer: {sale.buyer?.trim() || "Not specified"}
+                          </p>
+
+                          {sale.notes && (
+                            <p className="page-description">{sale.notes}</p>
+                          )}
+
+                          <div className="form-actions">
+                            <button
+                              type="button"
+                              className="button"
+                              onClick={() => deleteSale(sale)}
+                            >
+                              Delete Sale
+                            </button>
+                          </div>
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+              )}
+            </section>
+
           </div>
         )}
       </main>

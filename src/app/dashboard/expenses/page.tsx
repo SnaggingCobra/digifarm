@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Brand } from "@/components/brand";
 import { LogoutButton } from "@/components/auth/logout-button";
 import { createClient } from "@/utils/supabase/client";
+import { getSupabaseErrorMessage } from "@/utils/supabase/errors";
 
 const categories = [
     "Seeds",
@@ -135,9 +136,8 @@ export default function ExpensesPage() {
 
         } 
         catch (loadError) {
-            console.error("failed to load expenses", loadError);
             setLoadFailed(true);
-            setError("We couldn't load your expenses. Please try again.");
+            setError(`We couldn't load your expenses. ${getSupabaseErrorMessage(loadError) ?? "Please try again."}`);
         } finally {
             setLoading(false);
 
@@ -265,8 +265,7 @@ useEffect(() => {
       setForm(emptyForm());
       await loadData();
     } catch (saveError) {
-      console.error("Failed to save expense:", saveError);
-      setError("We couldn't save the expense. Please try again.");
+      setError(`We couldn't save the expense. ${getSupabaseErrorMessage(saveError) ?? "Please try again."}`);
     } finally {
       setSaving(false);
     }
@@ -327,8 +326,7 @@ useEffect(() => {
       setSuccess("Expense deleted successfully.");
       await loadData();
     } catch (deleteError) {
-      console.error("Failed to delete expense:", deleteError);
-      setError("We couldn't delete the expense. Please try again.");
+      setError(`We couldn't delete the expense. ${getSupabaseErrorMessage(deleteError) ?? "Please try again."}`);
     }
   }
 
@@ -347,6 +345,8 @@ useEffect(() => {
             Crops </Link>
             <Link href="/dashboard/expenses" className="text-link text-sm">
             Expenses</Link>
+            <Link href="/dashboard/harvests" className="text-link text-sm">
+            Harvests</Link>
             <Link href="/dashboard/notebook" className="text-link text-sm">
             Notebook</Link>
             <Link href="/dashboard/settings" className="text-link text-sm">
