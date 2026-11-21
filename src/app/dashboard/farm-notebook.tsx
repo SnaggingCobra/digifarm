@@ -175,7 +175,7 @@ export function FarmNotebook({
       setBusy(false);
     }
   }
-
+  
   async function addTask(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 

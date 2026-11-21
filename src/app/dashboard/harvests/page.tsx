@@ -585,4 +585,139 @@ export default function HarvestsPage() {
     }
     
   }
+
+  return (
+    <div className="page-shell">
+      <header className="site-header">
+        <div className="header-inner">
+          <Brand />
+          <nav className="header-nav">
+            <Link href="/dashboard">Dashboard</Link>
+            <Link href="/dashboard/crops">Crops</Link>
+            <Link href="/dashboard/expenses">Expenses</Link>
+            <Link href="/dashboard/harvests" className="active">
+              Harvests
+            </Link>
+            <Link href="/dashboard/notebook">Notebook</Link>
+            <Link href="/dashboard/settings">Settings</Link>
+            <LogoutButton />
+          </nav>
+        </div>
+      </header>
+
+      <main className="dashboard-main page-width">
+        <div className="page-heading">
+          <div>
+            <p className="eyebrow">FARM MANAGEMENT</p>
+            <h1>Harvest &amp; Revenue Manager</h1>
+            <p className="page-description">
+              Track your harvests, record sales, and keep an eye on your farm&apos;s
+              earnings.
+            </p>
+          </div>
+        </div>
+
+        {error && <div className="message message-error">{error}</div>}
+        {success && <div className="message message-success">{success}</div>}
+
+        {loading ? (
+          <div className="empty-state">Loading your harvest records...</div>
+        ) : loadFailed ? (
+          <div className="empty-state">
+            We couldn&apos;t load your harvest records. Please refresh the page.
+          </div>
+        ) : (
+          <div>
+            <section className="dashboard-stats">
+              <article className="stat-card">
+                <span className="stat-label">Total Harvest</span>
+                <strong className="stat-value">{harvests.length}</strong>
+                <span className="stat-discription">
+                  Recorded Harvest Events
+                </span>
+              </article>
+
+              <article className="stat-card">
+                <span className="stat-label">Sales Transaction</span>
+                <strong className="stat-value">{sales.length}</strong>
+                <span className="stat-description">
+                  Individual Sales Recorded
+                </span>
+              </article>
+
+              <article className="stat-card">
+                <span className="stat-label">Total Revenue</span>
+                <strong className="stat-value">
+                  {formatMoney(totalRevenue)}
+                </strong>
+                <span className="stat-description">
+                  Revenue from all recorded sales
+                </span>
+              </article>
+
+              <article className="stat-card">
+                <span className="stat-label">This Month</span>
+                <strong className="stat-value">
+                  {formatMoney(monthlyRevenue)}
+                </strong>
+                <span className="stat-description">
+                  Revenue Earned this Month
+                </span>
+              </article>
+            </section>
+
+            <section className="dashboard-card">
+              <div className="section-heading">
+                <div>
+                  <p className="eyebrow">Harvest Record</p>
+                  <h2>
+                    {editingHarvestId ? "Edit Harvest" :  "Record a Harvest"}
+
+                  </h2>
+                  <p className="page-description">
+                    Add details about the crops you have harvested
+                  </p>
+                </div>
+              </div>
+
+              <form className="auth-form" onSubmit={handleHarvestSubmit}>
+                <div className="form-grid">
+                  <label className="field">
+                    <span>Crop</span>
+                    <select 
+                    value={harvestForm.crop_id}
+                    onChange={(event) => 
+                      updateHarvestField("crop_id", event.target.value)
+                    }
+                    required
+                    >
+                      <option value="">Select a Crop</option>
+                      {crops.map((crop) => (
+                        <option key={crop.id} value={crop.id} >
+                          {crop.name}
+                          {crop.variety ? ` - ${crop.variety}` : ""}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="field">
+                    <span>Harvest Date</span>
+                    <input type="date" value={harvestForm.harvest_date}
+                    onChange={(event) => updateHarvestField("harvest_date", event.target.value)
+                      
+                    }
+                    required
+                    />
+                  </label>
+
+                  
+                </div>
+              </form>
+            </section>
+          </div>
+        )}
+      </main>
+    </div>
+  );
 }
