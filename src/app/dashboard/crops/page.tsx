@@ -6,6 +6,9 @@ import { Brand } from "@/components/brand";
 import { LogoutButton } from "@/components/auth/logout-button";
 import { FarmImage } from "@/components/farm-image";
 import { createClient } from "@/utils/supabase/client";
+import { ppid } from "process";
+import { deepStrictEqual } from "assert";
+import { runInContext } from "vm";
 
 const cropImages: Record<string, string> = {
   rice: "/rice.jpg",
@@ -159,7 +162,7 @@ export default function CropsPage() {
         notes: form.notes.trim() || null,
       };
 
-      if (editingId) {
+if (editingId) {
         const { error: updateError } = await supabase.from("crops").update(payload).eq("id", editingId);
         if (updateError) throw updateError;
         setSuccess("Crop updated successfully.");
