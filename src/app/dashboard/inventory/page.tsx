@@ -36,7 +36,13 @@ type InventoryItem = {
   created_at: string;
 };
 
-type InventoryFormMode = "new" | "purchase";
+type CropOption = {
+  id: string;
+  name: string;
+  variety: string | null;
+};
+
+type InventoryFormMode = "new" | "purchase" | "usage";
 
 function formatQuantity(value: number | string) {
   const quantity = Number(value);
@@ -58,6 +64,7 @@ function getLocalDateInputValue(date = new Date()) {
 export default function InventoryPage() {
   const supabase = useMemo(() => createClient(), []);
   const [items, setItems] = useState<InventoryItem[]>([]);
+  const [crops, setCrops] = useState<CropOption[]>([]);
   const [loadFailed, setLoadFailed] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -77,6 +84,12 @@ export default function InventoryPage() {
   const [purchaseDate, setPurchaseDate] = useState(getLocalDateInputValue);
   const [purchaseNotes, setPurchaseNotes] = useState("");
 
+  const [usageItemId, setUsageItemId] = useState("");
+  const [usageQuantity, setUsageQuantity] = useState("");
+  const [usageCropId, setUsageCropId] = useState("");
+  const [usageDate, setUsageDate] = useState(getLocalDateInputValue);
+  const [usageNotes, setUsageNotes] = useState("");
+
   const loadData = useCallback(async () => {
     setLoading(true);
     setLoadFailed(false);
@@ -93,17 +106,26 @@ export default function InventoryPage() {
         return;
       }
 
-      const { data, error: inventoryError } = await supabase
-        .from("inventory_items")
-        .select(
-          "id, user_id, name, category, unit, current_quantity, reorder_level, is_active, created_at",
-        )
-        .eq("user_id", authData.user.id)
-        .order("name", { ascending: true });
+      const [inventoryResult, cropResult] = await Promise.all([
+        supabase
+          .from("inventory_items")
+          .select(
+            "id, user_id, name, category, unit, current_quantity, reorder_level, is_active, created_at",
+          )
+          .eq("user_id", authData.user.id)
+          .order("name", { ascending: true }),
+        supabase
+          .from("crops")
+          .select("id, name, variety")
+          .eq("user_id", authData.user.id)
+          .order("name", { ascending: true }),
+      ]);
 
-      if (inventoryError) throw inventoryError;
+      if (inventoryResult.error) throw inventoryResult.error;
+      if (cropResult.error) throw cropResult.error;
 
-      setItems((data ?? []) as InventoryItem[]);
+      setItems((inventoryResult.data ?? []) as InventoryItem[]);
+      setCrops((cropResult.data ?? []) as CropOption[]);
     } catch (loadError) {
       setLoadFailed(true);
       setError(
@@ -303,6 +325,71 @@ export default function InventoryPage() {
     }
   };
 
+  const handleRecordUsage = async () => {
+    const quantity = Number(usageQuantity);
+
+    if (!usageItemId) {
+      setError("Please select an inventory item.");
+      return;
+    }
+
+    if (!Number.isFinite(quantity) || quantity <= 0) {
+      setError("Usage quantity must be greater than 0.");
+      return;
+    }
+
+    setSaving(true);
+    setError("");
+
+    try {
+      const { data: authData, error: authError } =
+        await supabase.auth.getUser();
+
+      if (authError) throw authError;
+
+      if (!authData.user) {
+        window.location.replace("/login?notice=session");
+        return;
+      }
+
+      const { error: usageError } = await supabase
+        .from("inventory_transactions")
+        .insert({
+          user_id: authData.user.id,
+          item_id: usageItemId,
+          crop_id: usageCropId || null,
+          transaction_type: "usage",
+          quantity,
+          transaction_date: usageDate,
+          notes: usageNotes.trim() || null,
+        });
+
+      if (usageError) {
+        setError(
+          getSupabaseErrorMessage(usageError) ??
+            "Could not record inventory usage.",
+        );
+        return;
+      }
+
+      setUsageItemId("");
+      setUsageQuantity("");
+      setUsageCropId("");
+      setUsageDate(getLocalDateInputValue());
+      setUsageNotes("");
+      setActiveForm(null);
+
+      await loadData();
+    } catch (usageError) {
+      setError(
+        getSupabaseErrorMessage(usageError) ??
+          "Something went wrong while recording usage.",
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
   useEffect(() => {
     const timer = setTimeout(() => {
       void loadData();
@@ -448,6 +535,19 @@ export default function InventoryPage() {
                 {activeForm === "purchase"
                   ? "Close Purchase Form"
                   : "Record Purchase"}
+              </button>
+              <button
+                type="button"
+                className="button button-secondary"
+                onClick={() => {
+                  setActiveForm(activeForm === "usage" ? null : "usage");
+                  setError("");
+                }}
+                disabled={saving}
+              >
+                {activeForm === "usage"
+                  ? "Close Usage Form"
+                  : "Record Usage"}
               </button>
             </div>
           </div>
@@ -687,6 +787,117 @@ export default function InventoryPage() {
               )}
             </form>
           )}
+
+          {activeForm === "usage" && (
+            <form
+              className="auth-form"
+              onSubmit={(event) => {
+                event.preventDefault();
+                void handleRecordUsage();
+              }}
+            >
+              <div className="form-grid">
+                <div className="field">
+                  <label htmlFor="usage-item">Inventory Item</label>
+                  <select
+                    id="usage-item"
+                    value={usageItemId}
+                    onChange={(event) => setUsageItemId(event.target.value)}
+                    required
+                  >
+                    <option value="">Select an item</option>
+                    {activeItems.map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.name} ({formatQuantity(item.current_quantity)}{" "}
+                        {item.unit})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="field">
+                  <label htmlFor="usage-quantity">Quantity Used</label>
+                  <input
+                    id="usage-quantity"
+                    type="number"
+                    min="0.01"
+                    step="0.01"
+                    value={usageQuantity}
+                    onChange={(event) => setUsageQuantity(event.target.value)}
+                    placeholder="e.g. 5"
+                    required
+                  />
+                </div>
+
+                <div className="field">
+                  <label htmlFor="usage-crop">Crop (Optional)</label>
+                  <select
+                    id="usage-crop"
+                    value={usageCropId}
+                    onChange={(event) => setUsageCropId(event.target.value)}
+                  >
+                    <option value="">No crop selected</option>
+                    {crops.map((crop) => (
+                      <option key={crop.id} value={crop.id}>
+                        {crop.name}
+                        {crop.variety ? ` (${crop.variety})` : ""}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="field">
+                  <label htmlFor="usage-date">Usage Date</label>
+                  <input
+                    id="usage-date"
+                    type="date"
+                    value={usageDate}
+                    onChange={(event) => setUsageDate(event.target.value)}
+                    required
+                  />
+                </div>
+
+                <div className="field">
+                  <label htmlFor="usage-notes">Notes</label>
+                  <input
+                    id="usage-notes"
+                    type="text"
+                    value={usageNotes}
+                    onChange={(event) => setUsageNotes(event.target.value)}
+                    placeholder="Optional notes"
+                  />
+                </div>
+              </div>
+
+              <div className="form-actions">
+                <button
+                  type="submit"
+                  className="button button-primary"
+                  disabled={saving || activeItems.length === 0}
+                >
+                  {saving ? "Saving..." : "Record Usage"}
+                </button>
+
+                <button
+                  type="button"
+                  className="button"
+                  onClick={() => {
+                    setActiveForm(null);
+                    setError("");
+                  }}
+                  disabled={saving}
+                >
+                  Cancel
+                </button>
+              </div>
+
+              {activeItems.length === 0 && (
+                <p className="empty-state">
+                  Add an inventory item before recording usage.
+                </p>
+              )}
+            </form>
+          )}
         </section>
 
         <section className="dashboard-card" style={{ marginTop: 24 }}>
@@ -772,6 +983,7 @@ export default function InventoryPage() {
                               color: "#9a4528",
                             }}
                           >
+
                             Low stock
                           </span>
                         )}
