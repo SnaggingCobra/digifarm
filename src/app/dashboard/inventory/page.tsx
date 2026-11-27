@@ -42,6 +42,18 @@ type CropOption = {
   variety: string | null;
 };
 
+type InventoryTransaction = {
+  id: string;
+  item_id: string;
+  crop_id: string | null;
+  transaction_type: "purchase" | "usage" | "adjustment";
+  quantity: number | string;
+  unit_cost: number | string | null;
+  transaction_date: string;
+  notes: string | null;
+  created_at: string;
+};
+
 type InventoryFormMode = "new" | "purchase" | "usage";
 
 function formatQuantity(value: number | string) {
@@ -65,6 +77,7 @@ export default function InventoryPage() {
   const supabase = useMemo(() => createClient(), []);
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [crops, setCrops] = useState<CropOption[]>([]);
+  const [transactions, setTransactions] = useState<InventoryTransaction[]>([]);
   const [loadFailed, setLoadFailed] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -106,26 +119,41 @@ export default function InventoryPage() {
         return;
       }
 
-      const [inventoryResult, cropResult] = await Promise.all([
-        supabase
-          .from("inventory_items")
-          .select(
-            "id, user_id, name, category, unit, current_quantity, reorder_level, is_active, created_at",
-          )
-          .eq("user_id", authData.user.id)
-          .order("name", { ascending: true }),
-        supabase
-          .from("crops")
-          .select("id, name, variety")
-          .eq("user_id", authData.user.id)
-          .order("name", { ascending: true }),
-      ]);
+      const [inventoryResult, cropResult, transactionResult] =
+        await Promise.all([
+          supabase
+            .from("inventory_items")
+            .select(
+              "id, user_id, name, category, unit, current_quantity, reorder_level, is_active, created_at",
+            )
+            .eq("user_id", authData.user.id)
+            .order("name", { ascending: true }),
+
+          supabase
+            .from("crops")
+            .select("id, name, variety")
+            .eq("user_id", authData.user.id)
+            .order("name", { ascending: true }),
+
+          supabase
+            .from("inventory_transactions")
+            .select(
+              "id, item_id, crop_id, transaction_type, quantity, unit_cost, transaction_date, notes, created_at",
+            )
+            .eq("user_id", authData.user.id)
+            .order("transaction_date", { ascending: false })
+            .order("created_at", { ascending: false }),
+        ]);
 
       if (inventoryResult.error) throw inventoryResult.error;
       if (cropResult.error) throw cropResult.error;
+      if (transactionResult.error) throw transactionResult.error;
 
       setItems((inventoryResult.data ?? []) as InventoryItem[]);
       setCrops((cropResult.data ?? []) as CropOption[]);
+      setTransactions(
+        (transactionResult.data ?? []) as InventoryTransaction[],
+      );
     } catch (loadError) {
       setLoadFailed(true);
       setError(
@@ -900,6 +928,8 @@ export default function InventoryPage() {
           )}
         </section>
 
+      
+
         <section className="dashboard-card" style={{ marginTop: 24 }}>
           <div
             style={{
@@ -1025,6 +1055,66 @@ export default function InventoryPage() {
                       </span>
                     </div>
                   </article>
+                );
+              })}
+            </div>
+          )}
+        </section>
+
+          <section className="dashboard-card" style={{ marginTop: 24 }}>
+          <h2>Transaction History</h2>
+          <p className="muted">Recent purchases and usage records.</p>
+
+          {loading ? (
+            <p role="status">Loading transaction history...</p>
+          ) : transactions.length === 0 ? (
+            <div className="empty-state">
+              <p>No inventory transactions recorded yet.</p>
+            </div>
+          ) : (
+            <div className="task-list">
+              {transactions.map((transaction) => {
+                const item = items.find(
+                  (entry) => entry.id === transaction.item_id,
+                );
+                const crop = crops.find(
+                  (entry) => entry.id === transaction.crop_id,
+                );
+                const isPurchase =
+                  transaction.transaction_type === "purchase";
+                const isUsage = transaction.transaction_type === "usage";
+                const quantity = Number(transaction.quantity);
+                const quantityLabel = isPurchase
+                  ? `+${formatQuantity(quantity)}`
+                  : isUsage
+                    ? `-${formatQuantity(quantity)}`
+                    : `${quantity > 0 ? "+" : ""}${formatQuantity(quantity)}`;
+
+                return (
+                  <div className="task-item" key={transaction.id}>
+                    <div>
+                      <strong>{item?.name ?? "Unknown item"}</strong>
+                      <p>
+                        {transaction.transaction_type.charAt(0).toUpperCase() +
+                          transaction.transaction_type.slice(1)}
+                        {" · "}
+                        {new Date(
+                          `${transaction.transaction_date}T00:00:00`,
+                        ).toLocaleDateString("en-NP")}
+                      </p>
+                      {crop && <p>Crop: {crop.name}</p>}
+                      {transaction.notes && <p>{transaction.notes}</p>}
+                      {isPurchase && transaction.unit_cost !== null && (
+                        <p>
+                          Unit cost: Rs.{" "}
+                          {Number(transaction.unit_cost).toFixed(2)}
+                        </p>
+                      )}
+                    </div>
+                    <strong>
+                      {quantityLabel} {item?.unit ?? ""}
+                    </strong>
+                  </div>
                 );
               })}
             </div>
