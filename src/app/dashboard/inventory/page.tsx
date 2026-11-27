@@ -15,6 +15,15 @@ type InventoryCategory =
   | "Equipment"
   | "Others";
 
+const categories: InventoryCategory[] = [
+  "Seeds",
+  "Fertilizers",
+  "Pesticides",
+  "Tools",
+  "Equipment",
+  "Others",
+];
+
 type InventoryItem = {
   id: string;
   user_id: string;
@@ -42,6 +51,13 @@ export default function InventoryPage() {
   const [loadFailed, setLoadFailed] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [showForm, setShowForm] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  const [name, setName] = useState("");
+  const [category, setCategory] = useState<InventoryCategory>("Seeds");
+  const [unit, setUnit] = useState("kg");
+  const [reorderLevel, setReorderLevel] = useState("0");
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -81,6 +97,62 @@ export default function InventoryPage() {
       setLoading(false);
     }
   }, [supabase]);
+
+  const handleAddItem = async () => {
+    if (!name.trim() || !unit.trim()) {
+      setError("Please enter an item name and unit.");
+      return;
+    }
+
+    const parsedReorderLevel = Number(reorderLevel);
+
+    if (!Number.isFinite(parsedReorderLevel) || parsedReorderLevel < 0) {
+      setError("Reorder level must be a valid number greater than or equal to 0.");
+      return;
+    }
+
+    setSaving(true);
+    setError("");
+
+    try {
+      const supabase = createClient();
+      const { data: authData } = await supabase.auth.getUser();
+
+      if (!authData.user) {
+        window.location.href = "/login?notice=session";
+        return;
+      }
+
+      const { error: saveError } = await supabase
+        .from("inventory_items")
+        .insert({
+          user_id: authData.user.id,
+          name: name.trim(),
+          category,
+          unit: unit.trim(),
+          reorder_level: parsedReorderLevel,
+        });
+
+      if (saveError) {
+        setError(
+          getSupabaseErrorMessage(saveError) ?? "Could not save inventory item."
+        );
+        return;
+      }
+
+      setName("");
+      setCategory("Seeds");
+      setUnit("kg");
+      setReorderLevel("0");
+      setShowForm(false);
+
+      await loadData();
+    } catch {
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -195,6 +267,118 @@ export default function InventoryPage() {
               Items at or below reorder level
             </span>
           </article>
+        </section>
+
+        <section className="dashboard-card">
+          <div className="section-heading">
+            <div>
+              <h2>Add Inventory Item</h2>
+              <p>Keep track of supplies used on your farm.</p>
+            </div>
+
+            <button
+              type="button"
+              className="button button-primary"
+              onClick={() => {
+                setShowForm(!showForm);
+                setError("");
+              }}
+            >
+              {showForm ? "Close Form" : "+ Add Item"}
+            </button>
+          </div>
+
+          {showForm && (
+            <form
+              className="auth-form"
+              onSubmit={(event) => {
+                event.preventDefault();
+                void handleAddItem();
+              }}
+            >
+              <div className="form-grid">
+                <div className="field">
+                  <label htmlFor="inventory-name">Item Name</label>
+                  <input
+                    id="inventory-name"
+                    type="text"
+                    value={name}
+                    onChange={(event) => setName(event.target.value)}
+                    placeholder="e.g. Urea Fertilizer"
+                    required
+                  />
+                </div>
+
+                <div className="field">
+                  <label htmlFor="inventory-category">Category</label>
+                  <select
+                    id="inventory-category"
+                    value={category}
+                    onChange={(event) =>
+                      setCategory(event.target.value as InventoryCategory)
+                    }
+                  >
+                    {categories.map((itemCategory) => (
+                      <option key={itemCategory} value={itemCategory}>
+                        {itemCategory}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="field">
+                  <label htmlFor="inventory-unit">Unit</label>
+                  <input
+                    id="inventory-unit"
+                    type="text"
+                    value={unit}
+                    onChange={(event) => setUnit(event.target.value)}
+                    placeholder="e.g. kg, litre, piece"
+                    required
+                  />
+                </div>
+
+                <div className="field">
+                  <label htmlFor="inventory-reorder">
+                    Low Stock Alert Level
+                  </label>
+                  <input
+                    id="inventory-reorder"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={reorderLevel}
+                    onChange={(event) => setReorderLevel(event.target.value)}
+                    required
+                  />
+                </div>
+              </div>
+
+              {error && <p role="alert">{error}</p>}
+
+              <div className="form-actions">
+                <button
+                  type="submit"
+                  className="button button-primary"
+                  disabled={saving}
+                >
+                  {saving ? "Saving..." : "Save Item"}
+                </button>
+
+                <button
+                  type="button"
+                  className="button"
+                  onClick={() => {
+                    setShowForm(false);
+                    setError("");
+                  }}
+                  disabled={saving}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          )}
         </section>
 
         <section className="dashboard-card" style={{ marginTop: 24 }}>
