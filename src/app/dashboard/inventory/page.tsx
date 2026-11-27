@@ -36,6 +36,8 @@ type InventoryItem = {
   created_at: string;
 };
 
+type InventoryFormMode = "new" | "purchase";
+
 function formatQuantity(value: number | string) {
   const quantity = Number(value);
   if (!Number.isFinite(quantity)) return "0";
@@ -45,19 +47,35 @@ function formatQuantity(value: number | string) {
   }).format(quantity);
 }
 
+function getLocalDateInputValue(date = new Date()) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
 export default function InventoryPage() {
   const supabase = useMemo(() => createClient(), []);
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [loadFailed, setLoadFailed] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  const [activeForm, setActiveForm] = useState<InventoryFormMode | null>(null);
   const [name, setName] = useState("");
   const [category, setCategory] = useState<InventoryCategory>("Seeds");
   const [unit, setUnit] = useState("kg");
   const [reorderLevel, setReorderLevel] = useState("0");
+
+  const [initialStockQuantity, setInitialStockQuantity] = useState("0");
+  const [initialStockCost, setInitialStockCost] = useState("");
+  const [selectedItemId, setSelectedItemId] = useState("");
+  const [purchaseQuantity, setPurchaseQuantity] = useState("");
+  const [purchaseCost, setPurchaseCost] = useState("");
+  const [purchaseDate, setPurchaseDate] = useState(getLocalDateInputValue);
+  const [purchaseNotes, setPurchaseNotes] = useState("");
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -111,19 +129,43 @@ export default function InventoryPage() {
       return;
     }
 
+    const parsedInitialStock = Number(initialStockQuantity);
+    const parsedInitialStockCost =
+      initialStockCost.trim() === "" ? null : Number(initialStockCost);
+
+    if (!Number.isFinite(parsedInitialStock) || parsedInitialStock < 0) {
+      setError("Initial stock must be a valid number greater than or equal to 0.");
+      return;
+    }
+
+    if (
+      parsedInitialStockCost !== null &&
+      (!Number.isFinite(parsedInitialStockCost) || parsedInitialStockCost < 0)
+    ) {
+      setError("Unit cost must be a valid amount greater than or equal to 0.");
+      return;
+    }
+
+    if (parsedInitialStock === 0 && parsedInitialStockCost !== null) {
+      setError("Enter an initial stock quantity to record its unit cost.");
+      return;
+    }
+
     setSaving(true);
     setError("");
 
     try {
-      const supabase = createClient();
-      const { data: authData } = await supabase.auth.getUser();
+      const { data: authData, error: authError } =
+        await supabase.auth.getUser();
+
+      if (authError) throw authError;
 
       if (!authData.user) {
-        window.location.href = "/login?notice=session";
+        window.location.replace("/login?notice=session");
         return;
       }
 
-      const { error: saveError } = await supabase
+      const { data: newItem, error: saveError } = await supabase
         .from("inventory_items")
         .insert({
           user_id: authData.user.id,
@@ -131,7 +173,9 @@ export default function InventoryPage() {
           category,
           unit: unit.trim(),
           reorder_level: parsedReorderLevel,
-        });
+        })
+        .select("id")
+        .single();
 
       if (saveError) {
         setError(
@@ -140,15 +184,120 @@ export default function InventoryPage() {
         return;
       }
 
+      let initialPurchaseError: string | undefined;
+
+      if (parsedInitialStock > 0) {
+        try {
+          const { error: purchaseError } = await supabase
+            .from("inventory_transactions")
+            .insert({
+              user_id: authData.user.id,
+              item_id: newItem.id,
+              transaction_type: "purchase",
+              quantity: parsedInitialStock,
+              unit_cost: parsedInitialStockCost,
+            });
+
+          if (purchaseError) throw purchaseError;
+        } catch (purchaseError) {
+          initialPurchaseError =
+            getSupabaseErrorMessage(purchaseError) ??
+            "The initial stock could not be recorded.";
+        }
+      }
+
       setName("");
       setCategory("Seeds");
       setUnit("kg");
       setReorderLevel("0");
-      setShowForm(false);
+      setInitialStockQuantity("0");
+      setInitialStockCost("");
+      setActiveForm(null);
 
       await loadData();
-    } catch {
-      setError("Something went wrong. Please try again.");
+
+      if (initialPurchaseError) {
+        setError(
+          `The item was created, but its initial stock purchase was not recorded. ${initialPurchaseError} You can record the purchase using the Purchase Stock action.`,
+        );
+      }
+    } catch (saveError) {
+      setError(
+        getSupabaseErrorMessage(saveError) ??
+          "Something went wrong. Please try again.",
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handlePurchaseStock = async () => {
+    const quantity = Number(purchaseQuantity);
+    const cost =
+      purchaseCost.trim() === "" ? null : Number(purchaseCost);
+
+    if (!selectedItemId) {
+      setError("Please select an inventory item.");
+      return;
+    }
+
+    if (!Number.isFinite(quantity) || quantity <= 0) {
+      setError("Purchase quantity must be greater than 0.");
+      return;
+    }
+
+    if (cost !== null && (!Number.isFinite(cost) || cost < 0)) {
+      setError("Unit cost must be a valid amount greater than or equal to 0.");
+      return;
+    }
+
+    setSaving(true);
+    setError("");
+
+    try {
+      const { data: authData, error: authError } =
+        await supabase.auth.getUser();
+
+      if (authError) throw authError;
+
+      if (!authData.user) {
+        window.location.replace("/login?notice=session");
+        return;
+      }
+
+      const { error: purchaseError } = await supabase
+        .from("inventory_transactions")
+        .insert({
+          user_id: authData.user.id,
+          item_id: selectedItemId,
+          transaction_type: "purchase",
+          quantity,
+          unit_cost: cost,
+          transaction_date: purchaseDate,
+          notes: purchaseNotes.trim() || null,
+        });
+
+      if (purchaseError) {
+        setError(
+          getSupabaseErrorMessage(purchaseError) ??
+            "Could not record the purchase.",
+        );
+        return;
+      }
+
+      setSelectedItemId("");
+      setPurchaseQuantity("");
+      setPurchaseCost("");
+      setPurchaseDate(getLocalDateInputValue());
+      setPurchaseNotes("");
+      setActiveForm(null);
+
+      await loadData();
+    } catch (purchaseError) {
+      setError(
+        getSupabaseErrorMessage(purchaseError) ??
+          "Something went wrong while recording the purchase.",
+      );
     } finally {
       setSaving(false);
     }
@@ -272,23 +421,38 @@ export default function InventoryPage() {
         <section className="dashboard-card">
           <div className="section-heading">
             <div>
-              <h2>Add Inventory Item</h2>
-              <p>Keep track of supplies used on your farm.</p>
+              <h2>Manage Inventory</h2>
+              <p>Add supplies and keep stock purchase records up to date.</p>
             </div>
-
-            <button
-              type="button"
-              className="button button-primary"
-              onClick={() => {
-                setShowForm(!showForm);
-                setError("");
-              }}
-            >
-              {showForm ? "Close Form" : "+ Add Item"}
-            </button>
+            <div className="form-actions">
+              <button
+                type="button"
+                className="button button-primary"
+                onClick={() => {
+                  setActiveForm(activeForm === "new" ? null : "new");
+                  setError("");
+                }}
+                disabled={saving}
+              >
+                {activeForm === "new" ? "Close Add Form" : "+ Add Item"}
+              </button>
+              <button
+                type="button"
+                className="button button-secondary"
+                onClick={() => {
+                  setActiveForm(activeForm === "purchase" ? null : "purchase");
+                  setError("");
+                }}
+                disabled={saving}
+              >
+                {activeForm === "purchase"
+                  ? "Close Purchase Form"
+                  : "Record Purchase"}
+              </button>
+            </div>
           </div>
 
-          {showForm && (
+          {activeForm === "new" && (
             <form
               className="auth-form"
               onSubmit={(event) => {
@@ -352,9 +516,42 @@ export default function InventoryPage() {
                     required
                   />
                 </div>
-              </div>
 
-              {error && <p role="alert">{error}</p>}
+                <div className="field">
+                  <label htmlFor="inventory-initial-stock">
+                    Initial Stock Quantity
+                  </label>
+                  <input
+                    id="inventory-initial-stock"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={initialStockQuantity}
+                    onChange={(event) =>
+                      setInitialStockQuantity(event.target.value)
+                    }
+                    required
+                  />
+                  <span className="muted">
+                    A quantity above zero is recorded as an initial purchase.
+                  </span>
+                </div>
+
+                <div className="field">
+                  <label htmlFor="inventory-initial-cost">
+                    Initial Stock Unit Cost (Rs.)
+                  </label>
+                  <input
+                    id="inventory-initial-cost"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={initialStockCost}
+                    onChange={(event) => setInitialStockCost(event.target.value)}
+                    placeholder="Optional"
+                  />
+                </div>
+              </div>
 
               <div className="form-actions">
                 <button
@@ -369,7 +566,7 @@ export default function InventoryPage() {
                   type="button"
                   className="button"
                   onClick={() => {
-                    setShowForm(false);
+                    setActiveForm(null);
                     setError("");
                   }}
                   disabled={saving}
@@ -377,6 +574,117 @@ export default function InventoryPage() {
                   Cancel
                 </button>
               </div>
+            </form>
+          )}
+
+          {activeForm === "purchase" && (
+            <form
+              className="auth-form"
+              onSubmit={(event) => {
+                event.preventDefault();
+                void handlePurchaseStock();
+              }}
+            >
+              <div className="form-grid">
+                <div className="field">
+                  <label htmlFor="purchase-item">Inventory Item</label>
+                  <select
+                    id="purchase-item"
+                    value={selectedItemId}
+                    onChange={(event) => setSelectedItemId(event.target.value)}
+                    required
+                  >
+                    <option value="">Select an item</option>
+                    {activeItems.map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.name} ({formatQuantity(item.current_quantity)}{" "}
+                        {item.unit})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="field">
+                  <label htmlFor="purchase-quantity">
+                    Quantity Purchased
+                  </label>
+                  <input
+                    id="purchase-quantity"
+                    type="number"
+                    min="0.01"
+                    step="0.01"
+                    value={purchaseQuantity}
+                    onChange={(event) =>
+                      setPurchaseQuantity(event.target.value)
+                    }
+                    placeholder="e.g. 50"
+                    required
+                  />
+                </div>
+
+                <div className="field">
+                  <label htmlFor="purchase-cost">Unit Cost (Rs.)</label>
+                  <input
+                    id="purchase-cost"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={purchaseCost}
+                    onChange={(event) => setPurchaseCost(event.target.value)}
+                    placeholder="Optional"
+                  />
+                </div>
+
+                <div className="field">
+                  <label htmlFor="purchase-date">Purchase Date</label>
+                  <input
+                    id="purchase-date"
+                    type="date"
+                    value={purchaseDate}
+                    onChange={(event) => setPurchaseDate(event.target.value)}
+                    required
+                  />
+                </div>
+
+                <div className="field">
+                  <label htmlFor="purchase-notes">Notes</label>
+                  <input
+                    id="purchase-notes"
+                    type="text"
+                    value={purchaseNotes}
+                    onChange={(event) => setPurchaseNotes(event.target.value)}
+                    placeholder="Optional notes"
+                  />
+                </div>
+              </div>
+
+              <div className="form-actions">
+                <button
+                  type="submit"
+                  className="button button-primary"
+                  disabled={saving || activeItems.length === 0}
+                >
+                  {saving ? "Saving..." : "Record Purchase"}
+                </button>
+
+                <button
+                  type="button"
+                  className="button"
+                  onClick={() => {
+                    setActiveForm(null);
+                    setError("");
+                  }}
+                  disabled={saving}
+                >
+                  Cancel
+                </button>
+              </div>
+
+              {activeItems.length === 0 && (
+                <p className="empty-state">
+                  Add an inventory item before recording a purchase.
+                </p>
+              )}
             </form>
           )}
         </section>
