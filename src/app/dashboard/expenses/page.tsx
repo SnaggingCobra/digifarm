@@ -739,6 +739,7 @@ useEffect(() => {
                           onClick={() => startEditing(expense)}
                         >
                           Edit
+                          
                         </button>
                         <button
                           type="button"
@@ -751,7 +752,7 @@ useEffect(() => {
                     </div>
                   </article>
                 );
-              })}
+                            })}
             </div>
           )}
         </section>

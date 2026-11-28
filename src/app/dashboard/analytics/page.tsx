@@ -56,7 +56,7 @@ export default async function AnalyticsPage() {
 
     supabase
       .from("harvests")
-      .select("id, crop_id")
+      .select("id, crop_id, quantity, unit")
       .eq("user_id", user.id),
 
     supabase
@@ -172,6 +172,54 @@ export default async function AnalyticsPage() {
       revenue: cropRevenue,
       profit: cropRevenue - cropExpenses,
     };
+  });
+
+  const harvestPerformance = cropRecords.flatMap((crop) => {
+    const cropHarvests = harvestRecords.filter(
+      (harvest) => harvest.crop_id === crop.id,
+    );
+
+    const units = [...new Set(cropHarvests.map((harvest) => harvest.unit))];
+
+    return units.map((unit) => {
+      const unitHarvests = cropHarvests.filter(
+        (harvest) => harvest.unit === unit,
+      );
+
+      const harvestIds = new Set(
+        unitHarvests.map((harvest) => harvest.id),
+      );
+
+      const harvested = unitHarvests.reduce(
+        (total, harvest) => total + Number(harvest.quantity),
+        0,
+      );
+
+      const relatedSales = salesRecords.filter((sale) =>
+        harvestIds.has(sale.harvest_id),
+      );
+
+      const sold = relatedSales.reduce(
+        (total, sale) => total + Number(sale.quantity),
+        0,
+      );
+
+      const revenue = relatedSales.reduce(
+        (total, sale) =>
+          total + Number(sale.quantity) * Number(sale.unit_price),
+        0,
+      );
+
+      return {
+        cropId: crop.id,
+        cropName: crop.name,
+        unit,
+        harvested,
+        sold,
+        remaining: harvested - sold,
+        revenue,
+      };
+    });
   });
 
   const monthlyPerformance = Array.from({ length: 6 }, (_, index) => {
@@ -349,7 +397,6 @@ export default async function AnalyticsPage() {
             </Link>
           </div>
 
-
           {cropPerformance.length === 0 ? (
             <div className="empty-state" style={{ marginTop: 18 }}>
               <h3>No crop data available</h3>
@@ -390,6 +437,103 @@ export default async function AnalyticsPage() {
             </div>
 
           )}
+        </section>
+
+        <section className="dashboard-card" style={{ marginTop: 24 }}>
+          <p className="eyebrow">Financial trends</p>
+          <h2
+            style={{
+              fontSize: "1.7rem",
+              color: "var(--farm-green-deep)",
+            }}
+          >
+            Monthly Performance
+          </h2>
+
+          <div
+            style={{
+              display: "flex",
+              gap: 18,
+              flexWrap: "wrap",
+              marginTop: 16,
+              fontSize: "0.9rem",
+            }}
+          >
+            <span>🟢 Revenue</span>
+            <span>🟠 Expenses</span>
+          </div>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(6, minmax(0, 1fr))",
+              gap: 12,
+              alignItems: "end",
+              marginTop: 24,
+              minHeight: 220,
+            }}
+          >
+            {monthlyPerformance.map((month, index) => (
+              <div
+                key={`${month.month}-${index}`}
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: 8,
+                  minWidth: 0,
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "end",
+                    justifyContent: "center",
+                    gap: 5,
+                    width: "100%",
+                    height: 160,
+                    borderBottom: "1px solid rgba(28, 42, 35, 0.15)",
+                  }}
+                >
+                  <div
+                    title={`Revenue: ${formatMoney(month.revenue)}`}
+                    style={{
+                      width: "35%",
+                      maxWidth: 28,
+                      height: `${(month.revenue / monthlyChartMaximum) * 100}%`,
+                      minHeight: month.revenue > 0 ? 4 : 0,
+                      background: "#39865A",
+                      borderRadius: "5px 5px 0 0",
+                    }}
+                  />
+                  <div
+                    title={`Expenses: ${formatMoney(month.expenses)}`}
+                    style={{
+                      width: "35%",
+                      maxWidth: 28,
+                      height: `${(month.expenses / monthlyChartMaximum) * 100}%`,
+                      minHeight: month.expenses > 0 ? 4 : 0,
+                      background: "#D99A43",
+                      borderRadius: "5px 5px 0 0",
+                    }}
+                  />
+                </div>
+
+                <strong style={{ fontSize: "0.85rem" }}>{month.month}</strong>
+
+                <span
+                  style={{
+                    fontSize: "0.75rem",
+                    color: month.profit >= 0 ? "#287A45" : "#B42318",
+                    textAlign: "center",
+                  }}
+                >
+                  {month.profit >= 0 ? "+" : "-"}
+                  {formatMoney(Math.abs(month.profit))}
+                </span>
+              </div>
+            ))}
+          </div>
         </section>
       </main>
     </div>

@@ -1051,6 +1051,7 @@ export default function InventoryPage() {
                           fontSize: "0.85rem",
                         }}
                       >
+                      
                         Available stock
                       </span>
                     </div>
@@ -1120,6 +1121,8 @@ export default function InventoryPage() {
             </div>
           )}
         </section>
+        
+
       </main>
     </div>
   );
