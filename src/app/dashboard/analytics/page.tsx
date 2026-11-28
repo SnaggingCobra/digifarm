@@ -39,8 +39,6 @@ export default async function AnalyticsPage() {
   const [
     { data: expenses, error: expensesError },
     { data: sales, error: salesError },
-    { data: harvests, error: harvestsError },
-    { data: crops, error: cropsError },
     { data: inventory, error: inventoryError },
     { data: transactions, error: transactionsError },
   ] = await Promise.all([
@@ -52,16 +50,6 @@ export default async function AnalyticsPage() {
     supabase
       .from("sales")
       .select("id, harvest_id, quantity, unit_price, sale_date")
-      .eq("user_id", user.id),
-
-    supabase
-      .from("harvests")
-      .select("id, crop_id, quantity, unit")
-      .eq("user_id", user.id),
-
-    supabase
-      .from("crops")
-      .select("id, name, variety, status")
       .eq("user_id", user.id),
 
     supabase
@@ -83,8 +71,6 @@ export default async function AnalyticsPage() {
   const errors = [
     expensesError,
     salesError,
-    harvestsError,
-    cropsError,
     inventoryError,
     transactionsError,
   ];
@@ -93,12 +79,60 @@ export default async function AnalyticsPage() {
 
   const expenseRecords = expenses ?? [];
   const salesRecords = sales ?? [];
-  const harvestRecords = harvests ?? [];
-  const cropRecords = crops ?? [];
   const inventoryRecords = inventory ?? [];
   const purchaseRecords = transactions ?? [];
 
-  // Analytics calculations will be added in the next step.
+  const totalExpenses = expenseRecords.reduce(
+    (total, expense) => total + Number(expense.amount),
+    0,
+  );
+
+  const totalRevenue = salesRecords.reduce(
+    (total, sale) =>
+      total + Number(sale.quantity) * Number(sale.unit_price),
+    0,
+  );
+
+  const currentDate = new Date();
+  const currentMonth = `${currentDate.getFullYear()}-${String(
+    currentDate.getMonth() + 1,
+  ).padStart(2, "0")}`;
+
+  const monthlyExpenses = expenseRecords.reduce(
+    (total, expense) =>
+      expense.expense_date.slice(0, 7) === currentMonth
+        ? total + Number(expense.amount)
+        : total,
+    0,
+  );
+
+  const monthlyRevenue = salesRecords.reduce(
+    (total, sale) =>
+      sale.sale_date.slice(0, 7) === currentMonth
+        ? total + Number(sale.quantity) * Number(sale.unit_price)
+        : total,
+    0,
+  );
+
+  const latestPurchaseCosts = new Map<string, number>();
+
+  for (const transaction of purchaseRecords) {
+    if (!latestPurchaseCosts.has(transaction.item_id)) {
+      latestPurchaseCosts.set(
+        transaction.item_id,
+        Number(transaction.unit_cost),
+      );
+    }
+  }
+
+  const inventoryValue = inventoryRecords.reduce((total, item) => {
+    const unitCost = latestPurchaseCosts.get(item.id);
+    if (unitCost === undefined) return total;
+
+    return total + Number(item.current_quantity) * unitCost;
+  }, 0);
+
+  const netProfit = totalRevenue - totalExpenses;
 
   return (
     <div className="page-shell">
@@ -141,7 +175,7 @@ export default async function AnalyticsPage() {
           <div>
             <p className="eyebrow">Farm performance</p>
             <h1 className="dashboard-header">Farm Analytics</h1>
-            <p>Understand your farm's financial performance.</p>
+            <p>Understand your farm&apos;s financial performance.</p>
           </div>
         </div>
 
@@ -152,30 +186,64 @@ export default async function AnalyticsPage() {
           </p>
         )}
 
-        <section className="dashboard-card" style={{ marginTop: 24 }}>
-          <h2>Analytics data loaded</h2>
-          <p>
-            Expenses: {expenseRecords.length}
-          </p>
-          <p>
-            Sales: {salesRecords.length}
-          </p>
-          <p>
-            Harvests: {harvestRecords.length}
-          </p>
-          <p>
-            Crops: {cropRecords.length}
-          </p>
-          <p>
-            Inventory items: {inventoryRecords.length}
-          </p>
-          <p>
-            Purchase records: {purchaseRecords.length}
-          </p>
+        <section className="dashboard-stats" style={{ marginTop: 24 }}>
+          <article className="stat-card">
+            <span className="eyebrow">Total Revenue</span>
+            <strong>{formatMoney(totalRevenue)}</strong>
+            <span>All recorded sales</span>
+          </article>
+
+          <article className="stat-card">
+            <span className="eyebrow">Total Expenses</span>
+            <strong>{formatMoney(totalExpenses)}</strong>
+            <span>All recorded expenses</span>
+          </article>
+
+          <article className="stat-card">
+            <span className="eyebrow">Net Profit / Loss</span>
+            <strong
+              style={{
+                color: netProfit >= 0 ? "#287A45" : "#B42318",
+              }}
+            >
+              {formatMoney(netProfit)}
+            </strong>
+            <span>{netProfit >= 0 ? "Net profit" : "Net loss"}</span>
+          </article>
+
+          <article className="stat-card">
+            <span className="eyebrow">Inventory Value</span>
+            <strong>{formatMoney(inventoryValue)}</strong>
+            <span>Estimated current stock value</span>
+          </article>
+        </section>
+
+        <section className="dashboard-stats" style={{ marginTop: 18 }}>
+          <article className="stat-card">
+            <span className="eyebrow">This Month&apos;s Revenue</span>
+            <strong>{formatMoney(monthlyRevenue)}</strong>
+          </article>
+
+          <article className="stat-card">
+            <span className="eyebrow">This Month&apos;s Expenses</span>
+            <strong>{formatMoney(monthlyExpenses)}</strong>
+          </article>
+
+          <article className="stat-card">
+            <span className="eyebrow">This Month&apos;s Net</span>
+            <strong
+              style={{
+                color:
+                  monthlyRevenue - monthlyExpenses >= 0
+                    ? "#287A45"
+                    : "#B42318",
+              }}
+            >
+              {formatMoney(monthlyRevenue - monthlyExpenses)}
+            </strong>
+          </article>
         </section>
       </main>
     </div>
   );
 }
-
-redirect
