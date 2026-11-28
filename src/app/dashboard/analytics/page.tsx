@@ -39,6 +39,8 @@ export default async function AnalyticsPage() {
   const [
     { data: expenses, error: expensesError },
     { data: sales, error: salesError },
+    { data: harvests, error: harvestsError },
+    { data: crops, error: cropsError },
     { data: inventory, error: inventoryError },
     { data: transactions, error: transactionsError },
   ] = await Promise.all([
@@ -51,6 +53,17 @@ export default async function AnalyticsPage() {
       .from("sales")
       .select("id, harvest_id, quantity, unit_price, sale_date")
       .eq("user_id", user.id),
+
+    supabase
+      .from("harvests")
+      .select("id, crop_id")
+      .eq("user_id", user.id),
+
+    supabase
+      .from("crops")
+      .select("id, name, variety")
+      .eq("user_id", user.id)
+      .order("name", { ascending: true }),
 
     supabase
       .from("inventory_items")
@@ -71,6 +84,8 @@ export default async function AnalyticsPage() {
   const errors = [
     expensesError,
     salesError,
+    harvestsError,
+    cropsError,
     inventoryError,
     transactionsError,
   ];
@@ -79,6 +94,8 @@ export default async function AnalyticsPage() {
 
   const expenseRecords = expenses ?? [];
   const salesRecords = sales ?? [];
+  const harvestRecords = harvests ?? [];
+  const cropRecords = crops ?? [];
   const inventoryRecords = inventory ?? [];
   const purchaseRecords = transactions ?? [];
 
@@ -131,6 +148,68 @@ export default async function AnalyticsPage() {
 
     return total + Number(item.current_quantity) * unitCost;
   }, 0);
+
+  const cropPerformance = cropRecords.map((crop) => {
+    const cropHarvests = harvestRecords.filter(
+      (harvest) => harvest.crop_id === crop.id,
+    );
+    const harvestIds = new Set(cropHarvests.map((harvest) => harvest.id));
+    const cropExpenses = expenseRecords
+      .filter((expense) => expense.crop_id === crop.id)
+      .reduce((total, expense) => total + Number(expense.amount), 0);
+    const cropRevenue = salesRecords
+      .filter((sale) => harvestIds.has(sale.harvest_id))
+      .reduce(
+        (total, sale) =>
+          total + Number(sale.quantity) * Number(sale.unit_price),
+        0,
+      );
+
+    return {
+      ...crop,
+      harvestCount: cropHarvests.length,
+      expenses: cropExpenses,
+      revenue: cropRevenue,
+      profit: cropRevenue - cropExpenses,
+    };
+  });
+
+  const monthlyPerformance = Array.from({ length: 6 }, (_, index) => {
+    const date = new Date();
+    date.setDate(1);
+    date.setMonth(date.getMonth() - (5 - index));
+
+    const monthKey = `${date.getFullYear()}-${String(
+      date.getMonth() + 1,
+    ).padStart(2, "0")}`;
+
+    const revenue = salesRecords
+      .filter((sale) => sale.sale_date.startsWith(monthKey))
+      .reduce(
+        (total, sale) =>
+          total + Number(sale.quantity) * Number(sale.unit_price),
+        0,
+      );
+
+    const expenses = expenseRecords
+      .filter((expense) => expense.expense_date.startsWith(monthKey))
+      .reduce((total, expense) => total + Number(expense.amount), 0);
+
+    return {
+      month: date.toLocaleDateString("en-NP", { month: "short" }),
+      revenue,
+      expenses,
+      profit: revenue - expenses,
+    };
+  });
+
+  const monthlyChartMaximum = Math.max(
+    1,
+    ...monthlyPerformance.flatMap((month) => [
+      month.revenue,
+      month.expenses,
+    ]),
+  );
 
   const netProfit = totalRevenue - totalExpenses;
 
@@ -242,6 +321,75 @@ export default async function AnalyticsPage() {
               {formatMoney(monthlyRevenue - monthlyExpenses)}
             </strong>
           </article>
+        </section>
+
+        <section className="dashboard-card" style={{ marginTop: 24 }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              gap: 16,
+              flexWrap: "wrap",
+            }}
+          >
+            <div>
+              <p className="eyebrow">Crop performance</p>
+              <h2
+                style={{
+                  fontSize: "1.7rem",
+                  color: "var(--farm-green-deep)",
+                }}
+              >
+                Profitability by Crop
+              </h2>
+            </div>
+            <Link href="/dashboard/crops" className="text-link text-sm">
+              Manage crops →
+            </Link>
+          </div>
+
+
+          {cropPerformance.length === 0 ? (
+            <div className="empty-state" style={{ marginTop: 18 }}>
+              <h3>No crop data available</h3>
+              <p>Add crops, expenses and harvest sales to see performance.</p>
+            </div>
+          ) : (
+            <div style={{ marginTop: 18, display: "grid", gap: 14 }}>
+              {cropPerformance.map((crop) => (
+                <article className="task-item" key={crop.id}>
+                  <div>
+                    <strong>{crop.name}</strong>
+                    {crop.variety && <p>{crop.variety}</p>}
+                    <p style={{ color: "rgba(28, 42, 35, 0.7)" }}>
+                      {crop.harvestCount} harvest record(s)
+                    </p>
+                    <p style={{ color: "rgba(28, 42, 35, 0.7)" }}>
+                      Revenue: {formatMoney(crop.revenue)}
+                    </p>
+                    <p style={{ color: "rgba(28, 42, 35, 0.7)" }}>
+                      Expenses: {formatMoney(crop.expenses)}
+                    </p>
+                  </div>
+
+                  <div style={{ textAlign: "right" }}>
+                    <strong
+                      style={{
+                        color: crop.profit >= 0 ? "#287A45" : "#B42318",
+                      }}
+                    >
+                      {formatMoney(crop.profit)}
+                    </strong>
+                    <p style={{ fontSize: "0.85rem" }}>
+                      {crop.profit >= 0 ? "Profit" : "Loss"}
+                    </p>
+                  </div>
+                </article>
+              ))}
+            </div>
+
+          )}
         </section>
       </main>
     </div>
