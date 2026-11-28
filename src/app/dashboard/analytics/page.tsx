@@ -14,6 +14,12 @@ function formatMoney(amount: number) {
   }).format(amount)}`;
 }
 
+function formatQuantity(amount: number) {
+  return new Intl.NumberFormat("en-NP", {
+    maximumFractionDigits: 2,
+  }).format(amount);
+}
+
 export default async function AnalyticsPage() {
   const { user, error } = await getVerifiedUser();
 
@@ -534,6 +540,117 @@ export default async function AnalyticsPage() {
               </div>
             ))}
           </div>
+        </section>
+
+        <section className="dashboard-card" style={{ marginTop: 24 }}>
+          <p className="eyebrow">Production overview</p>
+          <h2
+            style={{
+              fontSize: "1.7rem",
+              color: "var(--farm-green-deep)",
+            }}
+          >
+            Harvest &amp; Sales Performance
+          </h2>
+
+          {harvestPerformance.length === 0 ? (
+            <div className="empty-state" style={{ marginTop: 18 }}>
+              <h3>No harvest records yet</h3>
+              <p>
+                Record your harvests and sales to see production performance.
+              </p>
+              <Link
+                href="/dashboard/harvests"
+                className="button button-primary"
+                style={{ marginTop: 8 }}
+              >
+                Manage Harvests
+              </Link>
+            </div>
+          ) : (
+            <div style={{ display: "grid", gap: 16, marginTop: 20 }}>
+              {harvestPerformance.map((item) => (
+                <article
+                  className="task-item"
+                  key={`${item.cropId}-${item.unit}`}
+                >
+                  <div style={{ width: "100%" }}>
+                    <strong>{item.cropName}</strong>
+                    <p style={{ color: "rgba(28, 42, 35, 0.7)" }}>
+                      Unit: {item.unit}
+                    </p>
+
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns:
+                          "repeat(auto-fit, minmax(110px, 1fr))",
+                        gap: 12,
+                        marginTop: 12,
+                      }}
+                    >
+                      <div>
+                        <span className="eyebrow">Harvested</span>
+                        <strong>{formatQuantity(item.harvested)}</strong>
+                      </div>
+
+                      <div>
+                        <span className="eyebrow">Sold</span>
+                        <strong>{formatQuantity(item.sold)}</strong>
+                      </div>
+
+                      <div>
+                        <span className="eyebrow">Remaining</span>
+                        <strong>{formatQuantity(item.remaining)}</strong>
+                      </div>
+                    </div>
+
+                    <p style={{ marginTop: 12 }}>
+                      Sales revenue:{" "}
+                      <strong>{formatMoney(item.revenue)}</strong>
+                    </p>
+
+                    <div
+                      style={{
+                        height: 9,
+                        background: "rgba(28, 42, 35, 0.10)",
+                        borderRadius: 20,
+                        overflow: "hidden",
+                        marginTop: 12,
+                      }}
+                    >
+                      <div
+                        style={{
+                          height: "100%",
+                          width: `${
+                            item.harvested > 0
+                              ? Math.min(
+                                  100,
+                                  (item.sold / item.harvested) * 100,
+                                )
+                              : 0
+                          }%`,
+                          background: "#39865A",
+                          borderRadius: 20,
+                        }}
+                      />
+                    </div>
+
+                    <span
+                      style={{
+                        fontSize: "0.8rem",
+                        color: "rgba(28, 42, 35, 0.7)",
+                      }}
+                    >
+                      {item.harvested > 0
+                        ? `${((item.sold / item.harvested) * 100).toFixed(1)}% sold`
+                        : "No harvest quantity"}
+                    </span>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
         </section>
       </main>
     </div>
